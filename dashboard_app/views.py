@@ -1146,384 +1146,40 @@ def disbursal_records_api(request):
 @login_required
 @never_cache
 def collection_without_fraud(request):
-    """Collection Without Fraud page view"""
-    # Sample received amount by state
-    received_state_data = {
-        'Maharashtra': 2800000,
-        'Karnataka': 2000000,
-        'Telangana': 1200000,
-        'Uttar Pradesh': 800000,
-        'Haryana': 750000,
-        'Tamil Nadu': 650000,
-        'Gujarat': 600000,
-        'Andhra Pradesh': 550000,
-        'Delhi': 500000,
-        'Madhya Pradesh': 450000,
-        'Bihar': 400000,
-        'Uttarakhand': 350000,
-        'Kerala': 300000,
-        'Nagar Haveli and Daman and Diu': 250000,
-        'Odisha': 200000,
-        'West Bengal': 180000,
-        'Punjab': 150000,
-        'Rajasthan': 120000,
-        'Goa': 100000,
-        'Himachal Pradesh': 80000,
-    }
-    
-    # Sample pending amount by state
-    pending_state_data = {
-        'Karnataka': 1400000,
-        'Maharashtra': 1300000,
-        'Telangana': 800000,
-        'Uttar Pradesh': 600000,
-        'Haryana': 550000,
-        'Tamil Nadu': 500000,
-        'Gujarat': 450000,
-        'Andhra Pradesh': 400000,
-        'Delhi': 380000,
-        'Madhya Pradesh': 350000,
-        'Bihar': 300000,
-        'Uttarakhand': 280000,
-        'Kerala': 250000,
-        'Nagar Haveli and Daman and Diu': 200000,
-        'Odisha': 180000,
-        'West Bengal': 150000,
-        'Punjab': 120000,
-        'Rajasthan': 100000,
-        'Goa': 80000,
-        'Himachal Pradesh': 60000,
-    }
-    
-    # Sample amount over time data
-    amount_over_time_dates = ['17 Dec', '18 Dec', '19 Dec', '20 Dec', '22 Dec', '23 Dec', '24 Dec', '26 Dec', '27 Dec', '29 Dec', '30 Dec', '31 Dec', '1 Jan']
-    amount_over_time_repayment = [265689, 320450, 450230, 380120, 520340, 680250, 5742245, 420180, 380450, 350200, 320180, 310450, 280320]
-    amount_over_time_collected = [195066, 284560, 453231, 314560, 314285, 559565, 5043167, 354111, 319198, 278109, 246218, 234290, 170995]
-    
-    # Sample top cities collection rates
-    top_cities_data = {
-        'Coimbatore': 94.04,
-        'Delhi': 86.69,
-        'Thane': 84.28,
-        'Pune': 83.10,
-        'Gurugram': 81.89,
-        'Ahmedabad': 81.56,
-        'Chennai': 81.44,
-        'Chengalpattu': 80.46,
-        'Surat': 80.37,
-        'Gautam Buddha Nagar': 79.56,
-        'Rangareddy': 77.28,
-        'Mumbai': 76.51,
-        'Jaipur': 75.28,
-        'Vadodara': 73.13,
-        'Bengaluru Urban': 72.49,
-        'Ghaziabad': 71.66,
-        'Hyderabad': 67.11,
-        'Faridabad': 61.85,
-    }
-    
-    # Sample pending cases by amount bucket
-    pending_cases_buckets = ['<5k', '5-10k', '10-20k', '20-30k', '30-40k', '40-50k', '50-60k', '60-70k', '70-80k', '80-90k', '90+k']
-    pending_cases_counts = [1, 10, 144, 162, 132, 98, 66, 24, 13, 9, 15]
-    pending_cases_amounts = [3000, 75000, 2160000, 4050000, 4620000, 4410000, 3300000, 1560000, 975000, 765000, 1500000]
-    
-    # Sample collection table data
-    collection_table_data = [
-        {'date': '17 Dec 2025', 'repayment_amount': 265689, 'collected_amount': 195066, 'pending_amount': 70622, 'total_cases': 7, 'collected_cases': 6, 'pending_cases': 1, 'collection_percentage': 73.4, 'pending_percentage': 26.6},
-        {'date': '18 Dec 2025', 'repayment_amount': 320450, 'collected_amount': 284560, 'pending_amount': 35890, 'total_cases': 8, 'collected_cases': 7, 'pending_cases': 1, 'collection_percentage': 88.8, 'pending_percentage': 11.2},
-        {'date': '19 Dec 2025', 'repayment_amount': 450230, 'collected_amount': 453231, 'pending_amount': -1269, 'total_cases': 10, 'collected_cases': 10, 'pending_cases': 0, 'collection_percentage': 100.6, 'pending_percentage': -0.6},
-        {'date': '20 Dec 2025', 'repayment_amount': 380120, 'collected_amount': 314560, 'pending_amount': 65560, 'total_cases': 9, 'collected_cases': 7, 'pending_cases': 2, 'collection_percentage': 82.7, 'pending_percentage': 17.3},
-        {'date': '22 Dec 2025', 'repayment_amount': 520340, 'collected_amount': 314285, 'pending_amount': 206055, 'total_cases': 12, 'collected_cases': 8, 'pending_cases': 4, 'collection_percentage': 60.4, 'pending_percentage': 39.6},
-        {'date': '23 Dec 2025', 'repayment_amount': 680250, 'collected_amount': 559565, 'pending_amount': 120685, 'total_cases': 15, 'collected_cases': 12, 'pending_cases': 3, 'collection_percentage': 82.2, 'pending_percentage': 17.8},
-        {'date': '24 Dec 2025', 'repayment_amount': 5742245, 'collected_amount': 5043167, 'pending_amount': 699078, 'total_cases': 141, 'collected_cases': 120, 'pending_cases': 21, 'collection_percentage': 87.8, 'pending_percentage': 12.2},
-        {'date': '26 Dec 2025', 'repayment_amount': 420180, 'collected_amount': 354111, 'pending_amount': 66069, 'total_cases': 10, 'collected_cases': 8, 'pending_cases': 2, 'collection_percentage': 88.2, 'pending_percentage': 11.8},
-        {'date': '27 Dec 2025', 'repayment_amount': 380450, 'collected_amount': 319198, 'pending_amount': 61252, 'total_cases': 9, 'collected_cases': 8, 'pending_cases': 1, 'collection_percentage': 83.9, 'pending_percentage': 16.1},
-        {'date': '29 Dec 2025', 'repayment_amount': 350200, 'collected_amount': 278109, 'pending_amount': 72091, 'total_cases': 8, 'collected_cases': 6, 'pending_cases': 2, 'collection_percentage': 79.4, 'pending_percentage': 20.6},
-        {'date': '30 Dec 2025', 'repayment_amount': 320180, 'collected_amount': 246218, 'pending_amount': 73962, 'total_cases': 7, 'collected_cases': 6, 'pending_cases': 1, 'collection_percentage': 76.9, 'pending_percentage': 23.1},
-        {'date': '31 Dec 2025', 'repayment_amount': 310450, 'collected_amount': 234290, 'pending_amount': 76160, 'total_cases': 7, 'collected_cases': 5, 'pending_cases': 2, 'collection_percentage': 75.5, 'pending_percentage': 24.5},
-        {'date': '1 Jan 2026', 'repayment_amount': 280320, 'collected_amount': 170995, 'pending_amount': 109325, 'total_cases': 6, 'collected_cases': 4, 'pending_cases': 2, 'collection_percentage': 61.0, 'pending_percentage': 39.0},
-    ]
-    
-    # Sample DPD bucket data
-    dpd_bucket_data = [
-        {'bucket': 'DPD 1-30 days', 'loans': 485},
-        {'bucket': 'No DPD days', 'loans': 2101},
-    ]
-    
-    # Calculate percentages
-    total_applications = 468
-    fresh_applications = 124
-    reloan_applications = 344
-    fresh_app_percentage = round((fresh_applications / total_applications * 100), 1) if total_applications > 0 else 0
-    reloan_app_percentage = round((reloan_applications / total_applications * 100), 1) if total_applications > 0 else 0
-    
-    repayment_amount = 97418975
-    collected_amount = 10193688
-    pending_collection = 6510626
-    collected_percentage = round((collected_amount / repayment_amount * 100), 2) if repayment_amount > 0 else 0
-    pending_percentage = round((pending_collection / repayment_amount * 100), 2) if repayment_amount > 0 else 0
-    
-    principal_outstanding = 5105988
-    principal_collection_excl_90 = 6576679
-    principal_recovery_percentage = round((principal_collection_excl_90 / principal_outstanding * 100), 2) if principal_outstanding > 0 else 0
-    
-    fresh_principal_outstanding = 1242323
-    fresh_principal_collection_excl_90 = 1431771
-    fresh_recovery_percentage = round((fresh_principal_collection_excl_90 / fresh_principal_outstanding * 100), 2) if fresh_principal_outstanding > 0 else 0
-    
-    reloan_principal_outstanding = 3863665
-    reloan_principal_collection_excl_90 = 5144908
-    reloan_recovery_percentage = round((reloan_principal_collection_excl_90 / reloan_principal_outstanding * 100), 2) if reloan_principal_outstanding > 0 else 0
-    
-    collected_cases = 1937
-    pending_cases = 649
-    collected_cases_percentage = round((collected_cases / total_applications * 100), 1) if total_applications > 0 else 0
-    pending_cases_percentage = round((pending_cases / total_applications * 100), 1) if total_applications > 0 else 0
-    
-    context = {
-        # KPI Metrics - Applications
-        'total_applications': total_applications,
-        'fresh_applications': fresh_applications,
-        'reloan_applications': reloan_applications,
-        'fresh_app_percentage': fresh_app_percentage,
-        'reloan_app_percentage': reloan_app_percentage,
-        
-        # KPI Metrics - Sanction Amount
-        'sanction_amount': 13329476,
-        'fresh_sanction_amount': 2964220,
-        'reloan_sanction_amount': 10365256,
-        
-        # KPI Metrics - Net Disbursed
-        'net_disbursed': 11845462,
-        'fresh_net_disbursed': 2610749,
-        'reloan_net_disbursed': 9234713,
-        
-        # KPI Metrics - Collected Amount
-        'collected_amount': collected_amount,
-        'fresh_collected_amount': 2093458,
-        'reloan_collected_amount': 8100230,
-        'collected_percentage': collected_percentage,
-        
-        # KPI Metrics - Pending Collection
-        'pending_collection': pending_collection,
-        'fresh_pending_collection': 1507041,
-        'reloan_pending_collection': 5003585,
-        'pending_percentage': pending_percentage,
-        
-        # KPI Metrics - Principal Outstanding
-        'principal_outstanding': principal_outstanding,
-        'fresh_principal_outstanding': fresh_principal_outstanding,
-        'reloan_principal_outstanding': reloan_principal_outstanding,
-        
-        # KPI Metrics - Principal Collection Excl. 90+ DPD
-        'principal_collection_excl_90': principal_collection_excl_90,
-        'fresh_principal_collection_excl_90': fresh_principal_collection_excl_90,
-        'reloan_principal_collection_excl_90': reloan_principal_collection_excl_90,
-        'principal_recovery_percentage': principal_recovery_percentage,
-        'fresh_recovery_percentage': fresh_recovery_percentage,
-        'reloan_recovery_percentage': reloan_recovery_percentage,
-        
-        # KPI Metrics - Repayment Amount
-        'repayment_amount': repayment_amount,
-        'collected_cases': collected_cases,
-        'pending_cases': pending_cases,
-        'collected_cases_percentage': collected_cases_percentage,
-        'pending_cases_percentage': pending_cases_percentage,
-        
-        # Chart Data - Received Amount by State
-        'received_state_labels': json.dumps(list(received_state_data.keys())),
-        'received_state_values': json.dumps(list(received_state_data.values())),
-        
-        # Chart Data - Pending Amount by State
-        'pending_state_labels': json.dumps(list(pending_state_data.keys())),
-        'pending_state_values': json.dumps(list(pending_state_data.values())),
-        
-        # Chart Data - Amount Over Time
-        'amount_over_time_dates': json.dumps(amount_over_time_dates),
-        'amount_over_time_repayment': json.dumps(amount_over_time_repayment),
-        'amount_over_time_collected': json.dumps(amount_over_time_collected),
-        
-        # Chart Data - Top Cities Collection Rates
-        'top_cities_labels': json.dumps(list(top_cities_data.keys())),
-        'top_cities_rates': json.dumps(list(top_cities_data.values())),
-        
-        # Chart Data - Pending Cases by Amount Bucket
-        'pending_cases_buckets': json.dumps(pending_cases_buckets),
-        'pending_cases_counts': json.dumps(pending_cases_counts),
-        'pending_cases_amounts': json.dumps(pending_cases_amounts),
-        
-        # Table Data
-        'collection_table_data': json.dumps(collection_table_data),
-        'dpd_bucket_data': json.dumps(dpd_bucket_data),
-        
-        # Filter Options
-        'states': sorted(received_state_data.keys()),
-        'cities': [],
-        
-        # Last Updated
-        'last_updated': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
-    }
-    return render(request, 'dashboard/pages/collection_without_fraud.html', context)
+    """Collection Summary page view - Under Development"""
+    return render(request, 'dashboard/pages/collection_summary.html')
 
 
 @login_required
 @never_cache
 def collection_with_fraud(request):
-    """Collection With Fraud page view"""
-    context = {
-        'total_records': 0,
-        'fresh_count': 0,
-        'reloan_count': 0,
-        'total_loan_amount': 0,
-        'fresh_loan_amount': 0,
-        'reloan_loan_amount': 0,
-        'total_disbursal_amount': 0,
-        'fresh_disbursal_amount': 0,
-        'reloan_disbursal_amount': 0,
-        'processing_fee': 0,
-        'fresh_processing_fee': 0,
-        'reloan_processing_fee': 0,
-        'interest_amount': 0,
-        'fresh_interest_amount': 0,
-        'reloan_interest_amount': 0,
-        'repayment_amount': 0,
-        'fresh_repayment_amount': 0,
-        'reloan_repayment_amount': 0,
-        'state_labels': json.dumps([]),
-        'state_values': json.dumps([]),
-        'city_labels': json.dumps([]),
-        'city_values': json.dumps([]),
-        'states': [],
-        'cities': [],
-        'last_updated': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
-    }
-    return render(request, 'dashboard/pages/disbursal_summary.html', context)
+    """Collection With Fraud page view - Under Development"""
+    return render(request, 'dashboard/pages/collection_summary.html')
 
 
+@login_required
+@never_cache
 def loan_count_wise(request):
-    """Loan Count Wise page view"""
-    context = {
-        'total_records': 0,
-        'fresh_count': 0,
-        'reloan_count': 0,
-        'total_loan_amount': 0,
-        'fresh_loan_amount': 0,
-        'reloan_loan_amount': 0,
-        'total_disbursal_amount': 0,
-        'fresh_disbursal_amount': 0,
-        'reloan_disbursal_amount': 0,
-        'processing_fee': 0,
-        'fresh_processing_fee': 0,
-        'reloan_processing_fee': 0,
-        'interest_amount': 0,
-        'fresh_interest_amount': 0,
-        'reloan_interest_amount': 0,
-        'repayment_amount': 0,
-        'fresh_repayment_amount': 0,
-        'reloan_repayment_amount': 0,
-        'state_labels': json.dumps([]),
-        'state_values': json.dumps([]),
-        'city_labels': json.dumps([]),
-        'city_values': json.dumps([]),
-        'states': [],
-        'cities': [],
-        'last_updated': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
-    }
-    return render(request, 'dashboard/pages/disbursal_summary.html', context)
+    """Loan Count Wise page view - Under Development"""
+    return render(request, 'dashboard/pages/loan_count_wise.html')
 
 
+@login_required
+@never_cache
 def daily_performance_metrics(request):
-    """Daily Performance Metrics page view"""
-    context = {
-        'total_records': 0,
-        'fresh_count': 0,
-        'reloan_count': 0,
-        'total_loan_amount': 0,
-        'fresh_loan_amount': 0,
-        'reloan_loan_amount': 0,
-        'total_disbursal_amount': 0,
-        'fresh_disbursal_amount': 0,
-        'reloan_disbursal_amount': 0,
-        'processing_fee': 0,
-        'fresh_processing_fee': 0,
-        'reloan_processing_fee': 0,
-        'interest_amount': 0,
-        'fresh_interest_amount': 0,
-        'reloan_interest_amount': 0,
-        'repayment_amount': 0,
-        'fresh_repayment_amount': 0,
-        'reloan_repayment_amount': 0,
-        'state_labels': json.dumps([]),
-        'state_values': json.dumps([]),
-        'city_labels': json.dumps([]),
-        'city_values': json.dumps([]),
-        'states': [],
-        'cities': [],
-        'last_updated': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
-    }
-    return render(request, 'dashboard/pages/disbursal_summary.html', context)
+    """Daily Performance Metrics page view - Under Development"""
+    return render(request, 'dashboard/pages/daily_performance_metrics.html')
 
 
+@login_required
+@never_cache
 def credit_person_wise(request):
-    """Credit Person Wise page view"""
-    context = {
-        'total_records': 0,
-        'fresh_count': 0,
-        'reloan_count': 0,
-        'total_loan_amount': 0,
-        'fresh_loan_amount': 0,
-        'reloan_loan_amount': 0,
-        'total_disbursal_amount': 0,
-        'fresh_disbursal_amount': 0,
-        'reloan_disbursal_amount': 0,
-        'processing_fee': 0,
-        'fresh_processing_fee': 0,
-        'reloan_processing_fee': 0,
-        'interest_amount': 0,
-        'fresh_interest_amount': 0,
-        'reloan_interest_amount': 0,
-        'repayment_amount': 0,
-        'fresh_repayment_amount': 0,
-        'reloan_repayment_amount': 0,
-        'state_labels': json.dumps([]),
-        'state_values': json.dumps([]),
-        'city_labels': json.dumps([]),
-        'city_values': json.dumps([]),
-        'states': [],
-        'cities': [],
-        'last_updated': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
-    }
-    return render(request, 'dashboard/pages/disbursal_summary.html', context)
+    """Credit Person Wise page view - Under Development"""
+    return render(request, 'dashboard/pages/credit_person_wise.html')
 
 
+@login_required
+@never_cache
 def aum_report(request):
-    """AUM Report page view"""
-    context = {
-        'total_records': 0,
-        'fresh_count': 0,
-        'reloan_count': 0,
-        'total_loan_amount': 0,
-        'fresh_loan_amount': 0,
-        'reloan_loan_amount': 0,
-        'total_disbursal_amount': 0,
-        'fresh_disbursal_amount': 0,
-        'reloan_disbursal_amount': 0,
-        'processing_fee': 0,
-        'fresh_processing_fee': 0,
-        'reloan_processing_fee': 0,
-        'interest_amount': 0,
-        'fresh_interest_amount': 0,
-        'reloan_interest_amount': 0,
-        'repayment_amount': 0,
-        'fresh_repayment_amount': 0,
-        'reloan_repayment_amount': 0,
-        'state_labels': json.dumps([]),
-        'state_values': json.dumps([]),
-        'city_labels': json.dumps([]),
-        'city_values': json.dumps([]),
-        'states': [],
-        'cities': [],
-        'last_updated': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
-    }
-    return render(request, 'dashboard/pages/disbursal_summary.html', context)
-
+    """AUM Report page view - Under Development"""
+    return render(request, 'dashboard/pages/aum_report.html')
