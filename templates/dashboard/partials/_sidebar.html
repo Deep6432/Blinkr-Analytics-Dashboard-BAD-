@@ -1,0 +1,182 @@
+<!-- Sidebar Navigation -->
+<aside id="sidebar" class="hidden lg:flex flex-col border-r shadow-lg transition-all duration-300 fixed left-0 bottom-0" style="width: 16rem; top: 4rem; background-color: #00072D; border-color: rgba(255, 255, 255, 0.1);">
+    <!-- Sidebar Header with Collapse Button -->
+    <div class="flex items-center justify-between px-4 py-3.5 border-b" style="border-color: rgba(255, 255, 255, 0.1);">
+        <div id="sidebar-logo" class="flex items-center gap-3 transition-opacity duration-300">
+            <span id="sidebar-title" class="text-sm font-bold text-white transition-opacity duration-300 tracking-tight">Blinkr Analytics</span>
+        </div>
+        <button 
+            id="sidebar-toggle"
+            onclick="toggleSidebar()"
+            class="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
+            aria-label="Toggle sidebar"
+        >
+            <svg id="sidebar-toggle-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+        </button>
+    </div>
+    <nav class="flex-1 px-2 py-3 space-y-1 overflow-y-auto">
+        <!-- Disbursal Summary -->
+        <a 
+            href="{% url 'disbursal_summary' %}" 
+            class="sidebar-nav-item group relative flex items-center px-3 py-2.5 rounded-xl transition-all duration-300 {% if request.resolver_match.url_name == 'disbursal_summary' or not request.resolver_match.url_name %}text-white active-tab{% else %}text-white/50 hover:text-white{% endif %}"
+            {% if request.resolver_match.url_name == 'disbursal_summary' %}aria-current="page"{% endif %}
+            title="Disbursal Summary"
+        >
+            <div class="flex items-center gap-3 w-full">
+                <div class="flex items-center justify-center w-9 h-9 rounded-lg {% if request.resolver_match.url_name == 'disbursal_summary' or not request.resolver_match.url_name %}bg-white/25 shadow-md{% else %}bg-white/8 group-hover:bg-white/15{% endif %} transition-all duration-300">
+                    <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <span id="nav-disbursal" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Disbursal Summary</span>
+            </div>
+        </a>
+        
+        <!-- Collection Summary -->
+        <a 
+            href="{% url 'collection_summary' %}" 
+            class="sidebar-nav-item group relative flex items-center px-3 py-2.5 rounded-xl transition-all duration-300 {% if request.resolver_match.url_name == 'collection_summary' %}text-white active-tab{% else %}text-white/50 hover:text-white{% endif %}"
+            title="Collection Summary"
+        >
+            <div class="flex items-center gap-3 w-full">
+                <div class="flex items-center justify-center w-9 h-9 rounded-lg {% if request.resolver_match.url_name == 'collection_summary' %}bg-white/25 shadow-md{% else %}bg-white/8 group-hover:bg-white/15{% endif %} transition-all duration-300">
+                    <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <span id="nav-collection-summary" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Collection Summary</span>
+            </div>
+        </a>
+        
+        <!-- Loan Count Wise -->
+        <a 
+            href="{% url 'loan_count_wise' %}" 
+            class="sidebar-nav-item group relative flex items-center px-3 py-2.5 rounded-xl transition-all duration-300 {% if request.resolver_match.url_name == 'loan_count_wise' %}text-white active-tab{% else %}text-white/50 hover:text-white{% endif %}"
+            title="Loan Count Wise"
+        >
+            <div class="flex items-center gap-3 w-full">
+                <div class="flex items-center justify-center w-9 h-9 rounded-lg {% if request.resolver_match.url_name == 'loan_count_wise' %}bg-white/25 shadow-md{% else %}bg-white/8 group-hover:bg-white/15{% endif %} transition-all duration-300">
+                    <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <span id="nav-loan-count" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Loan Count Wise</span>
+            </div>
+        </a>
+        
+        <!-- Daily Performance Metrics -->
+        <a 
+            href="{% url 'daily_performance_metrics' %}" 
+            class="sidebar-nav-item group relative flex items-center px-3 py-2.5 rounded-xl transition-all duration-300 {% if request.resolver_match.url_name == 'daily_performance_metrics' %}text-white active-tab{% else %}text-white/50 hover:text-white{% endif %}"
+            title="Daily Performance Metrics"
+        >
+            <div class="flex items-center gap-3 w-full">
+                <div class="flex items-center justify-center w-9 h-9 rounded-lg {% if request.resolver_match.url_name == 'daily_performance_metrics' %}bg-white/25 shadow-md{% else %}bg-white/8 group-hover:bg-white/15{% endif %} transition-all duration-300">
+                    <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <span id="nav-daily-metrics" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Daily Performance Metrics</span>
+            </div>
+        </a>
+        
+        <!-- Credit Person Wise -->
+        <a 
+            href="{% url 'credit_person_wise' %}" 
+            class="sidebar-nav-item group relative flex items-center px-3 py-2.5 rounded-xl transition-all duration-300 {% if request.resolver_match.url_name == 'credit_person_wise' %}text-white active-tab{% else %}text-white/50 hover:text-white{% endif %}"
+            title="Credit Person Wise"
+        >
+            <div class="flex items-center gap-3 w-full">
+                <div class="flex items-center justify-center w-9 h-9 rounded-lg {% if request.resolver_match.url_name == 'credit_person_wise' %}bg-white/25 shadow-md{% else %}bg-white/8 group-hover:bg-white/15{% endif %} transition-all duration-300">
+                    <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                </div>
+                <span id="nav-credit-person" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Credit Person Wise</span>
+            </div>
+        </a>
+        
+        <!-- AUM Report -->
+        <a 
+            href="{% url 'aum_report' %}" 
+            class="sidebar-nav-item group relative flex items-center px-3 py-2.5 rounded-xl transition-all duration-300 {% if request.resolver_match.url_name == 'aum_report' %}text-white active-tab{% else %}text-white/50 hover:text-white{% endif %}"
+            title="AUM Report"
+        >
+            <div class="flex items-center gap-3 w-full">
+                <div class="flex items-center justify-center w-9 h-9 rounded-lg {% if request.resolver_match.url_name == 'aum_report' %}bg-white/25 shadow-md{% else %}bg-white/8 group-hover:bg-white/15{% endif %} transition-all duration-300">
+                    <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <span id="nav-aum" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">AUM Report</span>
+            </div>
+        </a>
+    </nav>
+</aside>
+
+<!-- Mobile Navigation Drawer (hidden by default, shown via JS) -->
+<div id="mobile-sidebar" class="lg:hidden fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black/50" onclick="toggleMobileSidebar()"></div>
+    <div class="fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-200 overflow-y-auto shadow-xl">
+        <div class="p-4 flex items-center justify-between border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Menu</h2>
+            <button onclick="toggleMobileSidebar()" class="text-gray-600 hover:text-gray-900">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <nav class="px-4 py-6 space-y-1">
+            <!-- Same navigation items as desktop -->
+            <a href="{% url 'disbursal_summary' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'disbursal_summary' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="font-medium">Disbursal Summary</span>
+            </a>
+            <a href="{% url 'collection_summary' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'collection_summary' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span class="font-medium">Collection Summary</span>
+            </a>
+            <a href="{% url 'loan_count_wise' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'loan_count_wise' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span class="font-medium">Loan Count Wise</span>
+            </a>
+            <a href="{% url 'daily_performance_metrics' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'daily_performance_metrics' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span class="font-medium">Daily Performance Metrics</span>
+            </a>
+            <a href="{% url 'credit_person_wise' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'credit_person_wise' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span class="font-medium">Credit Person Wise</span>
+            </a>
+            <a href="{% url 'aum_report' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'aum_report' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span class="font-medium">AUM Report</span>
+            </a>
+        </nav>
+    </div>
+</div>
+
+<!-- Mobile Menu Button -->
+<button 
+    onclick="toggleMobileSidebar()"
+    class="lg:hidden fixed bottom-4 right-4 z-40 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center"
+    aria-label="Open menu"
+>
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+</button>

@@ -1,0 +1,673 @@
+<!-- Filter Panel -->
+<div class="mb-6">
+    <div class="bg-white dark:bg-slate-900/50 border border-gray-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <!-- Filter Header -->
+        <button 
+            id="filter-toggle"
+            class="w-full flex items-center justify-between text-left"
+            onclick="toggleFilters()"
+            aria-expanded="false"
+            aria-controls="filter-content"
+        >
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-gray-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span class="font-medium text-gray-900 dark:text-slate-200">Refine your search criteria</span>
+            </div>
+            <svg 
+                id="filter-chevron"
+                class="w-5 h-5 text-gray-600 dark:text-slate-400 transition-transform"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+                style="transform: rotate(0deg);"
+            >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+        
+        <!-- Active Filter Chips -->
+        <div id="active-filters" class="mt-3 flex flex-wrap gap-2">
+            <!-- Filter chips will be dynamically added here -->
+        </div>
+        
+        <!-- Filter Content -->
+        <div id="filter-content" class="mt-4" style="display: none;">
+            <form 
+                id="filter-form"
+                method="get" 
+                action="{% if request.resolver_match.url_name %}{% url request.resolver_match.url_name %}{% else %}{{ request.path }}{% endif %}"
+                class="space-y-4"
+                onsubmit="return handleFilterSubmit(event)"
+                {% if request.resolver_match.url_name %}
+                hx-get="{% url request.resolver_match.url_name %}"
+                hx-target="body"
+                hx-swap="outerHTML"
+                {% endif %}
+            >
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Date From -->
+                    <div>
+                        <label for="date_from" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                            From Date
+                        </label>
+                        <input 
+                            type="date" 
+                            id="date_from" 
+                            name="date_from" 
+                            value="{% if request.GET.date_from %}{{ request.GET.date_from }}{% else %}{{ today_date }}{% endif %}"
+                            class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                    </div>
+                    
+                    <!-- Date To -->
+                    <div>
+                        <label for="date_to" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                            To Date
+                        </label>
+                        <input 
+                            type="date" 
+                            id="date_to" 
+                            name="date_to" 
+                            value="{% if request.GET.date_to %}{{ request.GET.date_to }}{% else %}{{ today_date }}{% endif %}"
+                            class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                    </div>
+                    
+                    <!-- State Filter (Multi-select) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                            State
+                        </label>
+                        <div class="relative">
+                            <div 
+                                id="state-selector"
+                                class="w-full min-h-[42px] px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent cursor-pointer"
+                                onclick="toggleStateDropdown()"
+                            >
+                                <div id="state-selected" class="flex flex-wrap gap-1 text-sm">
+                                    <span id="state-placeholder" class="text-gray-500 dark:text-slate-400">All States</span>
+                                </div>
+                            </div>
+                            <div id="state-dropdown" class="hidden absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                <div class="p-2">
+                                    <label class="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded cursor-pointer">
+                                        <input type="checkbox" id="state-all" class="state-checkbox" onchange="toggleAllStates()" checked>
+                                        <span class="text-sm font-medium">All States</span>
+                                    </label>
+                                    <div class="border-t border-gray-200 dark:border-slate-700 my-1"></div>
+                                    {% if states %}
+                                        {% for state in states %}
+                                        <label class="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                name="state" 
+                                                value="{{ state }}" 
+                                                class="state-checkbox"
+                                                onchange="updateStateSelection()"
+                                            >
+                                            <span class="text-sm">{{ state }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- City Filter (Multi-select) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                            City
+                        </label>
+                        <div class="relative">
+                            <div 
+                                id="city-selector"
+                                class="w-full min-h-[42px] px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent cursor-pointer"
+                                onclick="toggleCityDropdown()"
+                            >
+                                <div id="city-selected" class="flex flex-wrap gap-1 text-sm">
+                                    <span id="city-placeholder" class="text-gray-500 dark:text-slate-400">All Cities</span>
+                                </div>
+                            </div>
+                            <div id="city-dropdown" class="hidden absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                <div class="p-2">
+                                    <label class="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded cursor-pointer">
+                                        <input type="checkbox" id="city-all" class="city-checkbox" onchange="toggleAllCities()" checked>
+                                        <span class="text-sm font-medium">All Cities</span>
+                                    </label>
+                                    <div class="border-t border-gray-200 dark:border-slate-700 my-1"></div>
+                                    <div id="city-options">
+                                        {% if cities %}
+                                            {% for city in cities %}
+                                            <label class="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded cursor-pointer">
+                                                <input 
+                                                    type="checkbox" 
+                                                    name="city" 
+                                                    value="{{ city }}" 
+                                                    class="city-checkbox"
+                                                    onchange="updateCitySelection()"
+                                                >
+                                                <span class="text-sm">{{ city }}</span>
+                                            </label>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Product Filter (if applicable) -->
+                    {% if products %}
+                    <div>
+                        <label for="product" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                            Product
+                        </label>
+                        <select 
+                            id="product" 
+                            name="product"
+                            class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">All Products</option>
+                            {% for product in products %}
+                                <option value="{{ product }}" {% if request.GET.product == product %}selected{% endif %}>{{ product }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Credit Person Filter (if applicable) -->
+                    {% if credit_persons %}
+                    <div>
+                        <label for="credit_person" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                            Credit Person
+                        </label>
+                        <select 
+                            id="credit_person" 
+                            name="credit_person"
+                            class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">All Credit Persons</option>
+                            {% for person in credit_persons %}
+                                <option value="{{ person }}" {% if request.GET.credit_person == person %}selected{% endif %}>{{ person }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-3 pt-2">
+                    <button 
+                        type="submit"
+                        class="px-6 py-2.5 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 hover:opacity-90 active:scale-95"
+                        style="background-color: #00072D; border-color: rgba(255, 255, 255, 0.1);"
+                    >
+                        Apply Filters
+                    </button>
+                    <button 
+                        type="button"
+                        onclick="resetFilters()"
+                        class="px-6 py-2.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 font-medium rounded-lg border border-gray-300 dark:border-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-slate-600 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+                    >
+                        Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleFilters() {
+    const content = document.getElementById('filter-content');
+    const chevron = document.getElementById('filter-chevron');
+    const button = document.getElementById('filter-toggle');
+    const isExpanded = content.style.display !== 'none';
+    
+    if (isExpanded) {
+        content.style.display = 'none';
+        chevron.style.transform = 'rotate(180deg)';
+        button.setAttribute('aria-expanded', 'false');
+    } else {
+        content.style.display = 'block';
+        chevron.style.transform = 'rotate(0deg)';
+        button.setAttribute('aria-expanded', 'true');
+        // Re-initialize filters when section is opened
+        setTimeout(initializeFiltersFromURL, 100);
+    }
+}
+
+// Handle form submission to ensure checkboxes are included
+function handleFilterSubmit(event) {
+    const form = event.target;
+    
+    // Build URL with filter parameters
+    const url = new URL(form.action || window.location.href);
+    
+    // Clear existing state/city parameters
+    url.searchParams.delete('state');
+    url.searchParams.delete('city');
+    url.searchParams.delete('date_from');
+    url.searchParams.delete('date_to');
+    
+    // Add date parameters if present
+    const dateFrom = document.getElementById('date_from');
+    const dateTo = document.getElementById('date_to');
+    if (dateFrom && dateFrom.value) {
+        url.searchParams.set('date_from', dateFrom.value);
+    }
+    if (dateTo && dateTo.value) {
+        url.searchParams.set('date_to', dateTo.value);
+    }
+    
+    // Add checked state checkboxes (only if "All States" is not checked)
+    const stateAllCheckbox = document.getElementById('state-all');
+    if (!stateAllCheckbox || !stateAllCheckbox.checked) {
+        const checkedStates = Array.from(document.querySelectorAll('.state-checkbox:not(#state-all):checked'));
+        checkedStates.forEach(checkbox => {
+            url.searchParams.append('state', checkbox.value);
+        });
+    }
+    
+    // Add checked city checkboxes (only if "All Cities" is not checked)
+    const cityAllCheckbox = document.getElementById('city-all');
+    if (!cityAllCheckbox || !cityAllCheckbox.checked) {
+        const checkedCities = Array.from(document.querySelectorAll('.city-checkbox:not(#city-all):checked'));
+        checkedCities.forEach(checkbox => {
+            url.searchParams.append('city', checkbox.value);
+        });
+    }
+    
+    // Prevent default form submission and redirect manually
+    event.preventDefault();
+    window.location.href = url.toString();
+    return false;
+}
+
+// Multi-select dropdown functions
+function toggleStateDropdown() {
+    const dropdown = document.getElementById('state-dropdown');
+    const cityDropdown = document.getElementById('city-dropdown');
+    if (cityDropdown) cityDropdown.classList.add('hidden');
+    if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+function toggleCityDropdown() {
+    const dropdown = document.getElementById('city-dropdown');
+    const stateDropdown = document.getElementById('state-dropdown');
+    if (stateDropdown) stateDropdown.classList.add('hidden');
+    if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    const stateSelector = document.getElementById('state-selector');
+    const citySelector = document.getElementById('city-selector');
+    const stateDropdown = document.getElementById('state-dropdown');
+    const cityDropdown = document.getElementById('city-dropdown');
+    
+    if (stateSelector && !stateSelector.contains(event.target) && stateDropdown && !stateDropdown.contains(event.target)) {
+        stateDropdown.classList.add('hidden');
+    }
+    if (citySelector && !citySelector.contains(event.target) && cityDropdown && !cityDropdown.contains(event.target)) {
+        cityDropdown.classList.add('hidden');
+    }
+});
+
+function toggleAllStates() {
+    const allCheckbox = document.getElementById('state-all');
+    const stateCheckboxes = document.querySelectorAll('.state-checkbox:not(#state-all)');
+    stateCheckboxes.forEach(cb => {
+        cb.checked = allCheckbox.checked;
+    });
+    updateStateSelection();
+}
+
+function toggleAllCities() {
+    const allCheckbox = document.getElementById('city-all');
+    const cityCheckboxes = document.querySelectorAll('.city-checkbox:not(#city-all)');
+    cityCheckboxes.forEach(cb => {
+        cb.checked = allCheckbox.checked;
+    });
+    updateCitySelection();
+}
+
+function updateStateSelection(preserveCityState = false) {
+    const selected = document.querySelectorAll('.state-checkbox:not(#state-all):checked');
+    const placeholder = document.getElementById('state-placeholder');
+    const selectedDiv = document.getElementById('state-selected');
+    const allCheckbox = document.getElementById('state-all');
+    
+    if (selected.length === 0) {
+        allCheckbox.checked = true;
+        placeholder.textContent = 'All States';
+        placeholder.style.display = 'inline';
+        selectedDiv.querySelectorAll('.state-chip').forEach(chip => chip.remove());
+    } else {
+        allCheckbox.checked = false;
+        placeholder.style.display = 'none';
+        selectedDiv.querySelectorAll('.state-chip').forEach(chip => chip.remove());
+        
+        selected.forEach(checkbox => {
+            const chip = document.createElement('span');
+            chip.className = 'state-chip inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium rounded border border-blue-200 dark:border-blue-500/30';
+            chip.textContent = checkbox.value;
+            selectedDiv.appendChild(chip);
+        });
+        
+        // Update city options based on selected states (preserve checked state during initialization)
+        updateCityOptions(preserveCityState);
+    }
+}
+
+function updateCitySelection() {
+    const selected = document.querySelectorAll('.city-checkbox:not(#city-all):checked');
+    const placeholder = document.getElementById('city-placeholder');
+    const selectedDiv = document.getElementById('city-selected');
+    const allCheckbox = document.getElementById('city-all');
+    
+    if (selected.length === 0) {
+        allCheckbox.checked = true;
+        if (placeholder) {
+            placeholder.textContent = 'All Cities';
+            placeholder.style.display = 'inline';
+        }
+        selectedDiv.querySelectorAll('.city-chip').forEach(chip => chip.remove());
+    } else {
+        allCheckbox.checked = false;
+        if (placeholder) placeholder.style.display = 'none';
+        selectedDiv.querySelectorAll('.city-chip').forEach(chip => chip.remove());
+        
+        selected.forEach(checkbox => {
+            const chip = document.createElement('span');
+            chip.className = 'city-chip inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium rounded border border-blue-200 dark:border-blue-500/30';
+            chip.textContent = checkbox.value;
+            selectedDiv.appendChild(chip);
+        });
+    }
+}
+
+function updateCityOptions(preserveCheckedState = false) {
+    const selectedStates = Array.from(document.querySelectorAll('.state-checkbox:not(#state-all):checked')).map(cb => cb.value);
+    const cityOptions = document.getElementById('city-options');
+    const citiesByState = window.citiesByState || {};
+    
+    if (!cityOptions) return;
+    
+    // Store currently checked cities if we need to preserve state
+    const checkedCities = new Set();
+    if (preserveCheckedState) {
+        document.querySelectorAll('.city-checkbox:not(#city-all):checked').forEach(cb => {
+            checkedCities.add(cb.value);
+        });
+    }
+    
+    // Get all cities from selected states
+    const availableCities = new Set();
+    if (selectedStates.length === 0) {
+        // If no states selected, show all cities
+        Object.values(citiesByState).forEach(cities => {
+            cities.forEach(city => availableCities.add(city));
+        });
+    } else {
+        // Show cities from selected states only
+        selectedStates.forEach(state => {
+            if (citiesByState[state]) {
+                citiesByState[state].forEach(city => availableCities.add(city));
+            }
+        });
+    }
+    
+    // Update city checkboxes
+    const cityCheckboxes = cityOptions.querySelectorAll('.city-checkbox:not(#city-all)');
+    cityCheckboxes.forEach(checkbox => {
+        const cityValue = checkbox.value;
+        const label = checkbox.closest('label');
+        if (availableCities.has(cityValue)) {
+            label.style.display = 'flex';
+            // Restore checked state if preserving
+            if (preserveCheckedState && checkedCities.has(cityValue)) {
+                checkbox.checked = true;
+            }
+        } else {
+            label.style.display = 'none';
+            if (!preserveCheckedState) {
+                checkbox.checked = false;
+            }
+        }
+    });
+    
+    updateCitySelection();
+}
+
+function resetFilters() {
+    // Get the current URL without query parameters
+    const currentPath = window.location.pathname;
+    
+    // Redirect to the page without any filter parameters
+    window.location.href = currentPath;
+}
+
+function updateActiveFilters() {
+    const container = document.getElementById('active-filters');
+    container.innerHTML = '';
+    
+    const params = new URLSearchParams(window.location.search);
+    
+    // Handle date filters
+    ['date_from', 'date_to'].forEach(key => {
+        const value = params.get(key);
+        if (value) {
+            const chip = document.createElement('div');
+            chip.className = 'inline-flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-500/30';
+            chip.innerHTML = `
+                <span>${key === 'date_from' ? 'From' : 'To'}: ${value}</span>
+                <button onclick="removeFilter('${key}')" class="hover:text-blue-900">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            `;
+            container.appendChild(chip);
+        }
+    });
+    
+    // Handle multi-select filters (state, city)
+    ['state', 'city'].forEach(key => {
+        const values = params.getAll(key);
+        if (values.length > 0) {
+            values.forEach(value => {
+                const chip = document.createElement('div');
+                chip.className = 'inline-flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-500/30';
+                chip.innerHTML = `
+                    <span>${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}</span>
+                    <button onclick="removeFilterValue('${key}', '${value}')" class="hover:text-blue-900">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                `;
+                container.appendChild(chip);
+            });
+        }
+    });
+    
+    // Handle other filters
+    ['product', 'credit_person'].forEach(key => {
+        const value = params.get(key);
+        if (value) {
+            const chip = document.createElement('div');
+            chip.className = 'inline-flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-500/30';
+            chip.innerHTML = `
+                <span>${key === 'product' ? 'Product' : 'Credit Person'}: ${value}</span>
+                <button onclick="removeFilter('${key}')" class="hover:text-blue-900">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            `;
+            container.appendChild(chip);
+        }
+    });
+}
+
+function removeFilterValue(key, value) {
+    const params = new URLSearchParams(window.location.search);
+    const values = params.getAll(key);
+    params.delete(key);
+    values.forEach(v => {
+        if (v !== value) {
+            params.append(key, v);
+        }
+    });
+    window.location.search = params.toString();
+}
+
+function removeFilter(key) {
+    const params = new URLSearchParams(window.location.search);
+    params.delete(key);
+    window.location.search = params.toString();
+}
+
+// Function to initialize filters from URL parameters
+function initializeFiltersFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const selectedStates = params.getAll('state');
+    const selectedCities = params.getAll('city');
+    
+    // Keep filter section collapsed by default - don't auto-expand
+    
+    // Initialize date inputs - default to today's date if not in URL
+    const dateFrom = document.getElementById('date_from');
+    const dateTo = document.getElementById('date_to');
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (dateFrom) {
+        if (params.get('date_from')) {
+            dateFrom.value = params.get('date_from');
+        } else if (!dateFrom.value) {
+            dateFrom.value = today;
+        }
+    }
+    if (dateTo) {
+        if (params.get('date_to')) {
+            dateTo.value = params.get('date_to');
+        } else if (!dateTo.value) {
+            dateTo.value = today;
+        }
+    }
+    
+    // Initialize state checkboxes - with retry logic
+    function initializeStates(retryCount = 0) {
+        const stateAllCheckbox = document.getElementById('state-all');
+        if (!stateAllCheckbox) {
+            if (retryCount < 10) {
+                setTimeout(() => initializeStates(retryCount + 1), 100);
+            }
+            return;
+        }
+        
+        if (selectedStates.length > 0) {
+            stateAllCheckbox.checked = false;
+            // Uncheck all first
+            document.querySelectorAll('.state-checkbox:not(#state-all)').forEach(cb => cb.checked = false);
+            // Then check selected ones
+            selectedStates.forEach(state => {
+                const checkbox = document.querySelector(`.state-checkbox[value="${state}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+        } else {
+            // If no states selected, ensure "All States" is checked
+            stateAllCheckbox.checked = true;
+            document.querySelectorAll('.state-checkbox:not(#state-all)').forEach(cb => cb.checked = false);
+        }
+        // Update state selection display (preserve city state during initialization)
+        updateStateSelection(true);
+    }
+    
+    initializeStates();
+    
+    // Wait for city options to be available, then initialize city checkboxes
+    function initializeCities(retryCount = 0) {
+        const cityAllCheckbox = document.getElementById('city-all');
+        if (!cityAllCheckbox) {
+            if (retryCount < 10) {
+                setTimeout(() => initializeCities(retryCount + 1), 100);
+            }
+            return;
+        }
+        
+        // Update city options first (this filters available cities based on selected states)
+        if (typeof window.citiesByState !== 'undefined') {
+            updateCityOptions(true); // Preserve checked state
+        }
+        
+        // Now set city checkboxes from URL params - with multiple retries
+        function setCityCheckboxes(attempt = 0) {
+            if (selectedCities.length > 0) {
+                cityAllCheckbox.checked = false;
+                
+                let allFound = true;
+                selectedCities.forEach(city => {
+                    const checkbox = document.querySelector(`.city-checkbox[value="${city}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        // Make sure the label is visible
+                        const label = checkbox.closest('label');
+                        if (label) {
+                            label.style.display = 'flex';
+                        }
+                    } else {
+                        allFound = false;
+                    }
+                });
+                
+                if (!allFound && attempt < 5) {
+                    // Some cities not found yet, retry after updating options
+                    if (typeof window.citiesByState !== 'undefined') {
+                        updateCityOptions(true);
+                    }
+                    setTimeout(() => setCityCheckboxes(attempt + 1), 150);
+                } else {
+                    updateCitySelection();
+                }
+            } else {
+                // If no cities selected, ensure "All Cities" is checked
+                if (!cityAllCheckbox.checked) {
+                    cityAllCheckbox.checked = true;
+                    document.querySelectorAll('.city-checkbox:not(#city-all)').forEach(cb => cb.checked = false);
+                    updateCitySelection();
+                }
+            }
+        }
+        
+        // Start setting city checkboxes
+        setTimeout(() => setCityCheckboxes(), 100);
+    }
+    
+    // Start initializing cities
+    setTimeout(() => initializeCities(), 200);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateActiveFilters();
+    // Initialize filters after a short delay to ensure all elements are ready
+    setTimeout(() => {
+        initializeFiltersFromURL();
+    }, 300);
+});
+
+// Also initialize when page is fully loaded (in case DOMContentLoaded fired too early)
+window.addEventListener('load', function() {
+    setTimeout(() => {
+        initializeFiltersFromURL();
+    }, 200);
+});
+
+</script>

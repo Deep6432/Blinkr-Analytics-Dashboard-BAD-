@@ -1,0 +1,320 @@
+{% load humanize %}
+<!-- KPI Cards Grid - First Row (4 cards) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
+    <!-- Total Records Card -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative cursor-pointer" onclick="openRecordsTable()" title="Click to view all records">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Total Records</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;" data-kpi="total_records">
+                    {% if total_records %}{{ total_records|floatformat:0 }}{% else %}0{% endif %}
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #00072D;">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <path stroke="#00072D" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="fresh_count">{% if fresh_count %}{{ fresh_count }}{% else %}0{% endif %}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="reloan_count">{% if reloan_count %}{{ reloan_count }}{% else %}0{% endif %}</span>
+            </span>
+        </div>
+    </div>
+    
+    <!-- Total Loan Amount Card -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Total Loan Amount</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;" data-kpi="total_loan_amount">
+                    ₹{% if total_loan_amount %}{{ total_loan_amount|floatformat:0|intcomma }}{% else %}0{% endif %}
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #00072D;">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <path stroke="#00072D" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="fresh_loan_amount">₹{% if fresh_loan_amount %}{{ fresh_loan_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="reloan_loan_amount">₹{% if reloan_loan_amount %}{{ reloan_loan_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+            </span>
+        </div>
+    </div>
+    
+    <!-- Total Disbursal Amount Card -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Total Disbursal Amount</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;" data-kpi="total_disbursal_amount">
+                    ₹{% if total_disbursal_amount %}{{ total_disbursal_amount|floatformat:0|intcomma }}{% else %}0{% endif %}
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #00072D;">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <path stroke="#00072D" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke="#00072D" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="fresh_disbursal_amount">₹{% if fresh_disbursal_amount %}{{ fresh_disbursal_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="reloan_disbursal_amount">₹{% if reloan_disbursal_amount %}{{ reloan_disbursal_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+            </span>
+        </div>
+    </div>
+    
+    <!-- Processing Fee Card -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Processing Fee</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">
+                    <span data-kpi="processing_fee">₹{% if processing_fee %}{{ processing_fee|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #00072D;">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <path stroke="#00072D" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="fresh_processing_fee">₹{% if fresh_processing_fee %}{{ fresh_processing_fee|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="reloan_processing_fee">₹{% if reloan_processing_fee %}{{ reloan_processing_fee|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards Grid - Second Row (3 cards) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Interest Amount Card -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Interest Amount</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">
+                    <span data-kpi="interest_amount">₹{% if interest_amount %}{{ interest_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #00072D;">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <path stroke="#00072D" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="fresh_interest_amount">₹{% if fresh_interest_amount %}{{ fresh_interest_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="reloan_interest_amount">₹{% if reloan_interest_amount %}{{ reloan_interest_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+            </span>
+        </div>
+    </div>
+    
+    <!-- Repayment Amount Card -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Repayment Amount</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">
+                    <span data-kpi="repayment_amount">₹{% if repayment_amount %}{{ repayment_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #00072D;">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <path stroke="#00072D" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="fresh_repayment_amount">₹{% if fresh_repayment_amount %}{{ fresh_repayment_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="reloan_repayment_amount">₹{% if reloan_repayment_amount %}{{ reloan_repayment_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span>
+            </span>
+        </div>
+    </div>
+    
+    <!-- Average Tenure Card -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Average Tenure</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">
+                    <span data-kpi="average_tenure">{% if average_tenure %}{{ average_tenure|floatformat:0 }}{% else %}0{% endif %}</span> <span class="text-sm font-normal text-gray-500 dark:text-slate-400" style="font-size: 12px;">days</span>
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #00072D;">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <path stroke="#00072D" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="fresh_average_tenure">{% if fresh_average_tenure %}{{ fresh_average_tenure|floatformat:0 }}{% else %}0{% endif %} days</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold" data-kpi="reloan_average_tenure">{% if reloan_average_tenure %}{{ reloan_average_tenure|floatformat:0 }}{% else %}0{% endif %} days</span>
+            </span>
+        </div>
+    </div>
+    
+</div>
+
+<!-- Collection Metrics Card - Full Width -->
+<div class="w-full mb-6">
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-6">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Collection Metrics</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">
+                    <span data-kpi="collection_total">{% if collection_metrics %}{% if collection_metrics.total_collection_amount %}₹{{ collection_metrics.total_collection_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.totalCollectionAmount %}₹{{ collection_metrics.totalCollectionAmount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.total_amount %}₹{{ collection_metrics.total_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.collection_amount %}₹{{ collection_metrics.collection_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.total %}₹{{ collection_metrics.total|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</span>
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #00072D;">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <path stroke="#00072D" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="relative pt-4 border-t border-gray-100 dark:border-slate-700">
+            <!-- Grid Layout: Amount and Count together for each metric -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
+                <!-- Total -->
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2 h-2 rounded-full bg-gray-500"></span>
+                        <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Total</span>
+                    </div>
+                    <div class="text-gray-900 dark:text-white font-bold text-sm" data-kpi="collection_total_amount_display">{% if collection_metrics %}{% if collection_metrics.total_collection_amount %}₹{{ collection_metrics.total_collection_amount|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</div>
+                    <div class="text-gray-500 dark:text-slate-400 text-xs" data-kpi="collection_total_count">{% if collection_metrics %}{% if collection_metrics.total_collection_count %}{{ collection_metrics.total_collection_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</div>
+                </div>
+                
+                <!-- Fresh -->
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh</span>
+                    </div>
+                    <div class="text-gray-900 dark:text-white font-bold text-sm" data-kpi="collection_fresh_amount">{% if collection_metrics %}{% if collection_metrics.fresh_collection_amount %}₹{{ collection_metrics.fresh_collection_amount|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</div>
+                    <div class="text-gray-500 dark:text-slate-400 text-xs" data-kpi="collection_fresh_count">{% if collection_metrics %}{% if collection_metrics.fresh_collection_count %}{{ collection_metrics.fresh_collection_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</div>
+                </div>
+                
+                <!-- Reloan -->
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                        <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan</span>
+                    </div>
+                    <div class="text-gray-900 dark:text-white font-bold text-sm" data-kpi="collection_reloan_amount">{% if collection_metrics %}{% if collection_metrics.reloan_collection_amount %}₹{{ collection_metrics.reloan_collection_amount|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</div>
+                    <div class="text-gray-500 dark:text-slate-400 text-xs" data-kpi="collection_reloan_count">{% if collection_metrics %}{% if collection_metrics.reloan_collection_count %}{{ collection_metrics.reloan_collection_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</div>
+                </div>
+                
+                <!-- Prepayment -->
+                <div class="flex flex-col gap-1 lg:pl-8 relative">
+                    <!-- Separator - Same style as KPI card left border -->
+                    <div class="hidden lg:block absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                        <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Prepayment</span>
+                    </div>
+                    <div class="text-gray-900 dark:text-white font-bold text-sm" data-kpi="collection_prepayment_amount">{% if collection_metrics %}{% if collection_metrics.prepayment_amount %}₹{{ collection_metrics.prepayment_amount|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</div>
+                    <div class="text-gray-500 dark:text-slate-400 text-xs" data-kpi="collection_prepayment_count">{% if collection_metrics %}{% if collection_metrics.prepayment_count %}{{ collection_metrics.prepayment_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</div>
+                </div>
+                
+                <!-- On Time -->
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">On Time</span>
+                    </div>
+                    <div class="text-gray-900 dark:text-white font-bold text-sm" data-kpi="collection_on_time">{% if collection_metrics %}{% if collection_metrics.due_date_amount %}₹{{ collection_metrics.due_date_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.on_time_collection %}₹{{ collection_metrics.on_time_collection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.onTimeCollection %}₹{{ collection_metrics.onTimeCollection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.on_time %}₹{{ collection_metrics.on_time|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.on_time_amount %}₹{{ collection_metrics.on_time_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.onTime %}₹{{ collection_metrics.onTime|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</div>
+                    <div class="text-gray-500 dark:text-slate-400 text-xs" data-kpi="collection_due_date_count">{% if collection_metrics %}{% if collection_metrics.due_date_count %}{{ collection_metrics.due_date_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</div>
+                </div>
+                
+                <!-- Overdue -->
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                        <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Overdue</span>
+                    </div>
+                    <div class="text-gray-900 dark:text-white font-bold text-sm" data-kpi="collection_overdue">{% if collection_metrics %}{% if collection_metrics.overdue_amount %}₹{{ collection_metrics.overdue_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overdue_collection %}₹{{ collection_metrics.overdue_collection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overdueCollection %}₹{{ collection_metrics.overdueCollection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overdue %}₹{{ collection_metrics.overdue|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overDue %}₹{{ collection_metrics.overDue|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</div>
+                    <div class="text-gray-500 dark:text-slate-400 text-xs" data-kpi="collection_overdue_count">{% if collection_metrics %}{% if collection_metrics.overdue_count %}{{ collection_metrics.overdue_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,889 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Collection Without Fraud - Edge Analytics Dashboard{% endblock %}
+
+{% block page_title %}Collection Without Fraud{% endblock %}
+{% block page_subtitle %}Comprehensive collection performance and analytics{% endblock %}
+
+{% block kpi_cards %}
+<!-- Custom KPI Cards for Collection -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Total Applications Card -->
+    <div class="group bg-white dark:bg-gradient-to-br dark:from-blue-600 dark:via-blue-700 dark:to-blue-800 border border-blue-100 dark:border-blue-600 rounded-2xl p-6 hover:border-blue-200 dark:hover:border-blue-500 hover:shadow-xl dark:hover:shadow-2xl hover:scale-[1.01] dark:hover:scale-[1.02] transition-all duration-300 shadow-md dark:shadow-lg overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-50/40 via-transparent to-cyan-50/20 dark:from-white/10 dark:to-transparent pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-blue-400 dark:from-blue-500 dark:to-blue-400"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold text-blue-600/80 dark:text-white/90 mb-2 uppercase tracking-wider">Total Applications</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight">
+                    {% if total_applications %}{{ total_applications|floatformat:0|intcomma }}{% else %}0{% endif %}
+                </p>
+            </div>
+            <div class="p-3 bg-blue-50 dark:bg-white/20 dark:backdrop-blur-sm rounded-xl shadow-sm dark:shadow-lg ring-1 ring-blue-100 dark:ring-white/30 group-hover:ring-blue-200 dark:group-hover:ring-white/50 transition-all">
+                <svg class="w-6 h-6 text-blue-600 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+        </div>
+        <div class="relative flex items-center gap-4 text-xs pt-4 border-t border-gray-100 dark:border-white/30 -mx-6 px-6 pb-3">
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-white shadow-sm ring-2 ring-emerald-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Fresh:</span> <span class="text-gray-900 dark:text-white font-bold">{% if fresh_applications %}{{ fresh_applications }}{% else %}0{% endif %}</span> <span class="text-gray-400 dark:text-white/70">({% if fresh_applications_percentage %}{{ fresh_applications_percentage }}{% else %}0{% endif %}%)</span></span>
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 dark:bg-purple-200 shadow-sm ring-2 ring-purple-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Reloan:</span> <span class="text-gray-900 dark:text-white font-bold">{% if reloan_applications %}{{ reloan_applications }}{% else %}0{% endif %}</span> <span class="text-gray-400 dark:text-white/70">({% if reloan_applications_percentage %}{{ reloan_applications_percentage }}{% else %}0{% endif %}%)</span></span>
+        </div>
+    </div>
+
+    <!-- Sanction Amount Card -->
+    <div class="group bg-white dark:bg-gradient-to-br dark:from-emerald-600 dark:via-green-700 dark:to-teal-700 border border-emerald-100 dark:border-emerald-600 rounded-2xl p-6 hover:border-emerald-200 dark:hover:border-emerald-500 hover:shadow-xl dark:hover:shadow-2xl hover:scale-[1.01] dark:hover:scale-[1.02] transition-all duration-300 shadow-md dark:shadow-lg overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-emerald-50/40 via-transparent to-teal-50/20 dark:from-white/10 dark:to-transparent pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500 to-teal-400 dark:from-emerald-500 dark:to-teal-500"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold text-emerald-600/80 dark:text-white/90 mb-2 uppercase tracking-wider">Sanction Amount</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight">
+                    ₹{% if sanction_amount %}{{ sanction_amount|floatformat:0|intcomma }}{% else %}0{% endif %}
+                </p>
+            </div>
+            <div class="p-3 bg-emerald-50 dark:bg-white/20 dark:backdrop-blur-sm rounded-xl shadow-sm dark:shadow-lg ring-1 ring-emerald-100 dark:ring-white/30 group-hover:ring-emerald-200 dark:group-hover:ring-white/50 transition-all">
+                <svg class="w-6 h-6 text-emerald-600 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+        <div class="relative flex items-center gap-4 text-xs pt-4 border-t border-gray-100 dark:border-white/30 -mx-6 px-6 pb-3">
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-white shadow-sm ring-2 ring-emerald-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Fresh:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if fresh_sanction_amount %}{{ fresh_sanction_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 dark:bg-purple-200 shadow-sm ring-2 ring-purple-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Reloan:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if reloan_sanction_amount %}{{ reloan_sanction_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+        </div>
+    </div>
+
+    <!-- Net Disbursed Card -->
+    <div class="group bg-white dark:bg-gradient-to-br dark:from-purple-600 dark:via-violet-700 dark:to-fuchsia-700 border border-purple-100 dark:border-purple-600 rounded-2xl p-6 hover:border-purple-200 dark:hover:border-purple-500 hover:shadow-xl dark:hover:shadow-2xl hover:scale-[1.01] dark:hover:scale-[1.02] transition-all duration-300 shadow-md dark:shadow-lg overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-purple-50/40 via-transparent to-fuchsia-50/20 dark:from-white/10 dark:to-transparent pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 to-fuchsia-400 dark:from-purple-500 dark:to-fuchsia-500"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold text-purple-600/80 dark:text-white/90 mb-2 uppercase tracking-wider">Net Disbursed</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight">
+                    ₹{% if net_disbursed %}{{ net_disbursed|floatformat:0|intcomma }}{% else %}0{% endif %}
+                </p>
+            </div>
+            <div class="p-3 bg-purple-50 dark:bg-white/20 dark:backdrop-blur-sm rounded-xl shadow-sm dark:shadow-lg ring-1 ring-purple-100 dark:ring-white/30 group-hover:ring-purple-200 dark:group-hover:ring-white/50 transition-all">
+                <svg class="w-6 h-6 text-purple-600 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+        <div class="relative flex items-center gap-4 text-xs pt-4 border-t border-gray-100 dark:border-white/30 -mx-6 px-6 pb-3">
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-white shadow-sm ring-2 ring-emerald-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Fresh:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if fresh_net_disbursed %}{{ fresh_net_disbursed|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 dark:bg-purple-200 shadow-sm ring-2 ring-purple-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Reloan:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if reloan_net_disbursed %}{{ reloan_net_disbursed|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+        </div>
+    </div>
+
+    <!-- Collected Amount Card -->
+    <div class="group bg-white dark:bg-gradient-to-br dark:from-emerald-600 dark:via-green-700 dark:to-teal-700 border border-emerald-100 dark:border-emerald-600 rounded-2xl p-6 hover:border-emerald-200 dark:hover:border-emerald-500 hover:shadow-xl dark:hover:shadow-2xl hover:scale-[1.01] dark:hover:scale-[1.02] transition-all duration-300 shadow-md dark:shadow-lg overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-emerald-50/40 via-transparent to-teal-50/20 dark:from-white/10 dark:to-transparent pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500 to-teal-400 dark:from-emerald-500 dark:to-teal-500"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold text-emerald-600/80 dark:text-white/90 mb-2 uppercase tracking-wider">Collected Amount</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight">
+                    ₹{% if collected_amount %}{{ collected_amount|floatformat:0|intcomma }}{% else %}0{% endif %}
+                </p>
+                {% if collected_amount_percentage %}
+                <p class="text-xs text-emerald-600/70 dark:text-emerald-300 mt-1 font-medium">
+                    {{ collected_amount_percentage }}% of Repayment
+                </p>
+                {% endif %}
+            </div>
+            <div class="p-3 bg-emerald-50 dark:bg-white/20 dark:backdrop-blur-sm rounded-xl shadow-sm dark:shadow-lg ring-1 ring-emerald-100 dark:ring-white/30 group-hover:ring-emerald-200 dark:group-hover:ring-white/50 transition-all">
+                <svg class="w-6 h-6 text-emerald-600 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+        <div class="relative flex items-center gap-4 text-xs pt-4 border-t border-gray-100 dark:border-white/30 -mx-6 px-6 pb-3">
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-white shadow-sm ring-2 ring-emerald-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Fresh:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if fresh_collected_amount %}{{ fresh_collected_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 dark:bg-purple-200 shadow-sm ring-2 ring-purple-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Reloan:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if reloan_collected_amount %}{{ reloan_collected_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+        </div>
+    </div>
+
+    <!-- Pending Collection Card -->
+    <div class="group bg-white dark:bg-gradient-to-br dark:from-amber-600 dark:via-yellow-600 dark:to-orange-600 border border-amber-100 dark:border-amber-600 rounded-2xl p-6 hover:border-amber-200 dark:hover:border-amber-500 hover:shadow-xl dark:hover:shadow-2xl hover:scale-[1.01] dark:hover:scale-[1.02] transition-all duration-300 shadow-md dark:shadow-lg overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-amber-50/40 via-transparent to-orange-50/20 dark:from-white/10 dark:to-transparent pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-500 to-orange-400 dark:from-amber-500 dark:to-orange-500"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold text-amber-600/80 dark:text-white/90 mb-2 uppercase tracking-wider">Pending Collection</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight">
+                    ₹{% if pending_collection %}{{ pending_collection|floatformat:0|intcomma }}{% else %}0{% endif %}
+                </p>
+                {% if pending_collection_percentage %}
+                <p class="text-xs text-amber-600/70 dark:text-amber-300 mt-1 font-medium">
+                    {{ pending_collection_percentage }}% of Repayment
+                </p>
+                {% endif %}
+            </div>
+            <div class="p-3 bg-amber-50 dark:bg-white/20 dark:backdrop-blur-sm rounded-xl shadow-sm dark:shadow-lg ring-1 ring-amber-100 dark:ring-white/30 group-hover:ring-amber-200 dark:group-hover:ring-white/50 transition-all">
+                <svg class="w-6 h-6 text-amber-600 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+        <div class="relative flex items-center gap-4 text-xs pt-4 border-t border-gray-100 dark:border-white/30 -mx-6 px-6 pb-3">
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-white shadow-sm ring-2 ring-emerald-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Fresh:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if fresh_pending_collection %}{{ fresh_pending_collection|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 dark:bg-purple-200 shadow-sm ring-2 ring-purple-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Reloan:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if reloan_pending_collection %}{{ reloan_pending_collection|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+        </div>
+    </div>
+
+    <!-- Principal Outstanding Card -->
+    <div class="group bg-white dark:bg-gradient-to-br dark:from-rose-600 dark:via-pink-600 dark:to-red-600 border border-rose-100 dark:border-rose-600 rounded-2xl p-6 hover:border-rose-200 dark:hover:border-rose-500 hover:shadow-xl dark:hover:shadow-2xl hover:scale-[1.01] dark:hover:scale-[1.02] transition-all duration-300 shadow-md dark:shadow-lg overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-rose-50/40 via-transparent to-pink-50/20 dark:from-white/10 dark:to-transparent pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-rose-500 to-pink-400 dark:from-rose-500 dark:to-pink-500"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold text-rose-600/80 dark:text-white/90 mb-2 uppercase tracking-wider">Principal Outstanding</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight">
+                    ₹{% if principal_outstanding %}{{ principal_outstanding|floatformat:0|intcomma }}{% else %}0{% endif %}
+                </p>
+                {% if principal_outstanding == 0 or not principal_outstanding %}
+                <p class="text-xs text-gray-500 dark:text-white/70 mt-1 italic">No Collections Yet</p>
+                {% endif %}
+            </div>
+            <div class="p-3 bg-rose-50 dark:bg-white/20 dark:backdrop-blur-sm rounded-xl shadow-sm dark:shadow-lg ring-1 ring-rose-100 dark:ring-white/30 group-hover:ring-rose-200 dark:group-hover:ring-white/50 transition-all">
+                <svg class="w-6 h-6 text-rose-600 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+        </div>
+        <div class="relative flex items-center gap-4 text-xs pt-4 border-t border-gray-100 dark:border-white/30 -mx-6 px-6 pb-3">
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-white shadow-sm ring-2 ring-emerald-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Fresh:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if fresh_principal_outstanding %}{{ fresh_principal_outstanding|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 dark:bg-purple-200 shadow-sm ring-2 ring-purple-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Reloan:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if reloan_principal_outstanding %}{{ reloan_principal_outstanding|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+        </div>
+    </div>
+
+    <!-- Principal Collection Excl. 90+ DPD Card -->
+    <div class="group bg-white dark:bg-gradient-to-br dark:from-indigo-600 dark:via-purple-700 dark:to-violet-700 border border-indigo-100 dark:border-indigo-600 rounded-2xl p-6 hover:border-indigo-200 dark:hover:border-indigo-500 hover:shadow-xl dark:hover:shadow-2xl hover:scale-[1.01] dark:hover:scale-[1.02] transition-all duration-300 shadow-md dark:shadow-lg overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-50/40 via-transparent to-purple-50/20 dark:from-white/10 dark:to-transparent pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-purple-400 dark:from-indigo-500 dark:to-purple-500"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold text-indigo-600/80 dark:text-white/90 mb-2 uppercase tracking-wider">Principal Collection Excl. 90+ DPD</p>
+                <div class="flex items-baseline gap-2">
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight">
+                        ₹{% if principal_collection_excl_90 %}{{ principal_collection_excl_90|floatformat:0|intcomma }}{% else %}0{% endif %}
+                    </p>
+                    {% if principal_collection_excl_90_percentage %}
+                    <p class="text-xs text-indigo-600/70 dark:text-indigo-300 font-medium">
+                        {{ principal_collection_excl_90_percentage }}% Recovery
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="p-3 bg-indigo-50 dark:bg-white/20 dark:backdrop-blur-sm rounded-xl shadow-sm dark:shadow-lg ring-1 ring-indigo-100 dark:ring-white/30 group-hover:ring-indigo-200 dark:group-hover:ring-white/50 transition-all">
+                <svg class="w-6 h-6 text-indigo-600 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+            </div>
+        </div>
+        <div class="relative flex items-center gap-4 text-xs pt-4 border-t border-gray-100 dark:border-white/30 -mx-6 px-6 pb-3">
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-white shadow-sm ring-2 ring-emerald-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Fresh:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if fresh_principal_collection_excl_90 %}{{ fresh_principal_collection_excl_90|floatformat:0|intcomma }}{% else %}0{% endif %}</span> <span class="text-gray-400 dark:text-white/70">({% if fresh_principal_collection_excl_90_percentage %}{{ fresh_principal_collection_excl_90_percentage }}{% else %}0{% endif %}% Recovery)</span></span>
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-orange-500 dark:bg-orange-200 shadow-sm ring-2 ring-orange-100 dark:ring-white/50"></span><span class="text-gray-600 dark:text-white/90 font-medium">Reloan:</span> <span class="text-gray-900 dark:text-white font-bold">₹{% if reloan_principal_collection_excl_90 %}{{ reloan_principal_collection_excl_90|floatformat:0|intcomma }}{% else %}0{% endif %}</span> <span class="text-gray-400 dark:text-white/70">({% if reloan_principal_collection_excl_90_percentage %}{{ reloan_principal_collection_excl_90_percentage }}{% else %}0{% endif %}% Recovery)</span></span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Principal Collection Summary Card -->
+<div class="bg-white dark:bg-slate-900/80 border border-indigo-200/60 dark:border-slate-800 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 mb-6 bg-gradient-to-br from-indigo-50/20 via-white to-white dark:from-slate-900/80 dark:via-slate-900/80 dark:to-slate-900/80">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-indigo-50 dark:bg-slate-800 rounded-xl shadow-sm ring-1 ring-indigo-100 dark:ring-slate-700">
+                <svg class="w-5 h-5 text-indigo-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Principal Collection Excl. 90+ DPD</h3>
+            </div>
+        </div>
+    </div>
+    <div class="flex items-baseline gap-4 mb-4">
+        <p class="text-3xl font-bold text-indigo-700 dark:text-white tabular-nums">
+            ₹{% if principal_collection_excl_90 %}{{ principal_collection_excl_90|floatformat:0|intcomma }}{% else %}0{% endif %}
+        </p>
+        {% if principal_recovery_percentage %}
+        <p class="text-sm text-indigo-600/70 dark:text-indigo-400 font-semibold">
+            {{ principal_recovery_percentage }}% Recovery
+        </p>
+        {% endif %}
+    </div>
+    <div class="flex items-center gap-6 text-sm pt-4 border-t border-indigo-100/60 dark:border-slate-800">
+        <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-green-500 dark:bg-green-500 shadow-sm ring-2 ring-green-200 dark:ring-green-900/50"></span><span class="text-gray-500 dark:text-slate-400">Fresh:</span> <span class="text-green-700 dark:text-slate-300 font-semibold">₹{% if fresh_principal_collection_excl_90 %}{{ fresh_principal_collection_excl_90|floatformat:0|intcomma }}{% else %}0{% endif %}</span> <span class="text-gray-400">({% if fresh_recovery_percentage %}{{ fresh_recovery_percentage }}{% else %}0{% endif %}% Recovery)</span></span>
+        <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-orange-500 dark:bg-orange-500 shadow-sm ring-2 ring-orange-200 dark:ring-orange-900/50"></span><span class="text-gray-500 dark:text-slate-400">Reloan:</span> <span class="text-orange-700 dark:text-slate-300 font-semibold">₹{% if reloan_principal_collection_excl_90 %}{{ reloan_principal_collection_excl_90|floatformat:0|intcomma }}{% else %}0{% endif %}</span> <span class="text-gray-400">({% if reloan_recovery_percentage %}{{ reloan_recovery_percentage }}{% else %}0{% endif %}% Recovery)</span></span>
+    </div>
+</div>
+
+<!-- Geographic Distribution Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Received Amount by State Chart -->
+    <div class="bg-white dark:bg-slate-900/80 border border-gray-200/60 dark:border-slate-800 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-green-50/10 dark:from-slate-900/80 dark:to-slate-900/80">
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-green-50 dark:bg-slate-800 rounded-lg">
+                    <svg class="w-5 h-5 text-green-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1.5 tracking-tight">Received Amount by State</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Geographic distribution of collections</p>
+                </div>
+            </div>
+        </div>
+        <div class="relative h-80">
+            <canvas id="receivedStateChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Pending Amount by State Chart -->
+    <div class="bg-white dark:bg-slate-900/80 border border-gray-200/60 dark:border-slate-800 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-red-50/10 dark:from-slate-900/80 dark:to-slate-900/80">
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-red-50 dark:bg-slate-800 rounded-lg">
+                    <svg class="w-5 h-5 text-red-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1.5 tracking-tight">Pending Amount by State</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Geographic distribution of pending amount</p>
+                </div>
+            </div>
+        </div>
+        <div class="relative h-80">
+            <canvas id="pendingStateChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Amount Received Over Time Chart -->
+<div class="bg-white dark:bg-slate-900/80 border border-gray-200/60 dark:border-slate-800 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 mb-8 bg-gradient-to-br from-white to-blue-50/10 dark:from-slate-900/80 dark:to-slate-900/80">
+    <div class="flex items-center justify-between mb-5">
+        <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1.5 tracking-tight">Amount Received Over Time</h3>
+            <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Collection trends and performance</p>
+        </div>
+        <button class="p-2 text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors" aria-label="Fullscreen">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+        </button>
+    </div>
+    <div class="relative h-96">
+        <canvas id="amountOverTimeChart"></canvas>
+    </div>
+</div>
+
+<!-- Additional KPI Cards Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Repayment Amount Card -->
+    <div class="group bg-white dark:bg-gradient-to-br dark:from-teal-600 dark:via-cyan-600 dark:to-blue-600 border border-teal-100 dark:border-teal-600 rounded-2xl p-6 hover:border-teal-200 dark:hover:border-teal-500 hover:shadow-xl dark:hover:shadow-2xl hover:scale-[1.01] dark:hover:scale-[1.02] transition-all duration-300 shadow-md dark:shadow-lg overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-teal-50/40 via-transparent to-cyan-50/20 dark:from-white/10 dark:to-transparent pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-teal-500 to-cyan-400 dark:from-teal-500 dark:to-cyan-500"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold text-teal-600/80 dark:text-white/90 mb-2 uppercase tracking-wider">Repayment Amount</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight">
+                    ₹{% if repayment_amount %}{{ repayment_amount|floatformat:0|intcomma }}{% else %}0{% endif %}
+                </p>
+            </div>
+            <div class="p-3 bg-teal-50 dark:bg-white/20 dark:backdrop-blur-sm rounded-xl shadow-sm dark:shadow-lg ring-1 ring-teal-100 dark:ring-white/30 group-hover:ring-teal-200 dark:group-hover:ring-white/50 transition-all">
+                <svg class="w-6 h-6 text-teal-600 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collected Cases Card -->
+    <div class="group bg-white dark:bg-gradient-to-br dark:from-emerald-600 dark:via-green-700 dark:to-teal-700 border border-emerald-100 dark:border-emerald-600 rounded-2xl p-6 hover:border-emerald-200 dark:hover:border-emerald-500 hover:shadow-xl dark:hover:shadow-2xl hover:scale-[1.01] dark:hover:scale-[1.02] transition-all duration-300 shadow-md dark:shadow-lg overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-emerald-50/40 via-transparent to-teal-50/20 dark:from-white/10 dark:to-transparent pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500 to-teal-400 dark:from-emerald-500 dark:to-teal-500"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold text-emerald-600/80 dark:text-white/90 mb-2 uppercase tracking-wider">Collected Cases</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight">
+                    {% if collected_cases %}{{ collected_cases|floatformat:0|intcomma }}{% else %}0{% endif %}
+                </p>
+                {% if collected_cases_percentage %}
+                <p class="text-xs text-emerald-600/70 dark:text-emerald-300 mt-1 font-medium">
+                    {{ collected_cases_percentage }}% of Total
+                </p>
+                {% endif %}
+            </div>
+            <div class="p-3 bg-emerald-50 dark:bg-white/20 dark:backdrop-blur-sm rounded-xl shadow-sm dark:shadow-lg ring-1 ring-emerald-100 dark:ring-white/30 group-hover:ring-emerald-200 dark:group-hover:ring-white/50 transition-all">
+                <svg class="w-6 h-6 text-emerald-600 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Cases Card -->
+    <div class="group bg-white dark:bg-gradient-to-br dark:from-rose-600 dark:via-pink-600 dark:to-red-600 border border-rose-100 dark:border-rose-600 rounded-2xl p-6 hover:border-rose-200 dark:hover:border-rose-500 hover:shadow-xl dark:hover:shadow-2xl hover:scale-[1.01] dark:hover:scale-[1.02] transition-all duration-300 shadow-md dark:shadow-lg overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-rose-50/40 via-transparent to-pink-50/20 dark:from-white/10 dark:to-transparent pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-rose-500 to-pink-400 dark:from-rose-500 dark:to-pink-500"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold text-rose-600/80 dark:text-white/90 mb-2 uppercase tracking-wider">Pending Cases</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight">
+                    {% if pending_cases %}{{ pending_cases|floatformat:0|intcomma }}{% else %}0{% endif %}
+                </p>
+                {% if pending_cases_percentage %}
+                <p class="text-xs text-rose-600/70 dark:text-rose-300 mt-1 font-medium">
+                    {{ pending_cases_percentage }}% of Total
+                </p>
+                {% endif %}
+            </div>
+            <div class="p-3 bg-rose-50 dark:bg-white/20 dark:backdrop-blur-sm rounded-xl shadow-sm dark:shadow-lg ring-1 ring-rose-100 dark:ring-white/30 group-hover:ring-rose-200 dark:group-hover:ring-white/50 transition-all">
+                <svg class="w-6 h-6 text-rose-600 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Collection % over Time Table -->
+<div class="bg-white dark:bg-slate-900/80 border border-gray-200/60 dark:border-slate-800 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 mb-8">
+    <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-blue-50 dark:bg-slate-800 rounded-lg">
+                <svg class="w-5 h-5 text-blue-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1.5 tracking-tight">Collection % over Time</h3>
+                <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Detailed collection analysis by date</p>
+            </div>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 dark:border-slate-700">
+                    <th class="text-left py-3 px-4 font-semibold text-gray-700 dark:text-slate-300">Date</th>
+                    <th class="text-right py-3 px-4 font-semibold text-gray-700 dark:text-slate-300">Repayment Amount</th>
+                    <th class="text-right py-3 px-4 font-semibold text-gray-700 dark:text-slate-300">Collected Amount</th>
+                    <th class="text-right py-3 px-4 font-semibold text-gray-700 dark:text-slate-300">Pending Amount</th>
+                    <th class="text-right py-3 px-4 font-semibold text-gray-700 dark:text-slate-300">Total Cases</th>
+                    <th class="text-right py-3 px-4 font-semibold text-gray-700 dark:text-slate-300">Collected Cases</th>
+                    <th class="text-right py-3 px-4 font-semibold text-gray-700 dark:text-slate-300">Pending Cases</th>
+                    <th class="text-right py-3 px-4 font-semibold text-gray-700 dark:text-slate-300">Collection %</th>
+                    <th class="text-right py-3 px-4 font-semibold text-gray-700 dark:text-slate-300">Pending %</th>
+                </tr>
+            </thead>
+            <tbody id="collectionTableBody">
+                <!-- Table rows will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- DPD Bucket Distribution and Top Cities Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- DPD Bucket Distribution Table -->
+    <div class="bg-white dark:bg-slate-900/80 border border-gray-200/60 dark:border-slate-800 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300">
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-red-50 dark:bg-slate-800 rounded-lg">
+                    <svg class="w-5 h-5 text-red-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1.5 tracking-tight">DPD Bucket Distribution</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Days Past Due analysis and risk assessment</p>
+                </div>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200 dark:border-slate-700">
+                        <th class="text-left py-3 px-4 font-semibold text-gray-700 dark:text-slate-300">DPD Bucket</th>
+                        <th class="text-right py-3 px-4 font-semibold text-gray-700 dark:text-slate-300">Loans (#)</th>
+                    </tr>
+                </thead>
+                <tbody id="dpdTableBody">
+                    <!-- Table rows will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Top Cities - Collection Rate Chart -->
+    <div class="bg-white dark:bg-slate-900/80 border border-gray-200/60 dark:border-slate-800 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300">
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-50 dark:bg-slate-800 rounded-lg">
+                    <svg class="w-5 h-5 text-blue-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1.5 tracking-tight">Top Cities - Collection Rate (%)</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Color coded by performance bracket</p>
+                </div>
+            </div>
+            <button class="p-2 text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors" aria-label="Fullscreen">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+            </button>
+        </div>
+        <div class="relative h-80">
+            <canvas id="topCitiesChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Cases by Amount Bucket Chart -->
+<div class="bg-white dark:bg-slate-900/80 border border-gray-200/60 dark:border-slate-800 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 mb-8">
+    <div class="flex items-center justify-between mb-5">
+        <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1.5 tracking-tight">Pending Cases by Amount Bucket</h3>
+            <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Pending cases grouped by repayment amount</p>
+        </div>
+        <button class="p-2 text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors" aria-label="Fullscreen">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+        </button>
+    </div>
+    <div class="relative h-96">
+        <canvas id="pendingCasesChart"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Chart data from Django backend
+const receivedStateData = {
+    labels: {{ received_state_labels|safe|default:"[]" }},
+    values: {{ received_state_values|safe|default:"[]" }}
+};
+
+const pendingStateData = {
+    labels: {{ pending_state_labels|safe|default:"[]" }},
+    values: {{ pending_state_values|safe|default:"[]" }}
+};
+
+const amountOverTimeData = {
+    dates: {{ amount_over_time_dates|safe|default:"[]" }},
+    repaymentAmounts: {{ amount_over_time_repayment|safe|default:"[]" }},
+    collectedAmounts: {{ amount_over_time_collected|safe|default:"[]" }}
+};
+
+const topCitiesData = {
+    labels: {{ top_cities_labels|safe|default:"[]" }},
+    rates: {{ top_cities_rates|safe|default:"[]" }}
+};
+
+const pendingCasesData = {
+    buckets: {{ pending_cases_buckets|safe|default:"[]" }},
+    caseCounts: {{ pending_cases_counts|safe|default:"[]" }},
+    pendingAmounts: {{ pending_cases_amounts|safe|default:"[]" }}
+};
+
+const collectionTableData = {{ collection_table_data|safe|default:"[]" }};
+const dpdBucketData = {{ dpd_bucket_data|safe|default:"[]" }};
+
+// Get current theme
+function getCurrentTheme() {
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+}
+
+// Get tooltip colors based on theme
+function getTooltipColors() {
+    const theme = getCurrentTheme();
+    return theme === 'dark' 
+        ? {
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            titleColor: '#f1f5f9',
+            bodyColor: '#cbd5e1',
+            borderColor: '#334155'
+        }
+        : {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#111827',
+            bodyColor: '#374151',
+            borderColor: '#e5e7eb'
+        };
+}
+
+// Initialize Received Amount by State Chart (Bar Chart)
+let receivedStateChart;
+if (receivedStateData.labels.length > 0 && receivedStateData.values.length > 0) {
+    const ctx = document.getElementById('receivedStateChart').getContext('2d');
+    const tooltipColors = getTooltipColors();
+    receivedStateChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: receivedStateData.labels,
+            datasets: [{
+                label: 'Received Amount',
+                data: receivedStateData.values,
+                backgroundColor: '#10b981',
+                borderColor: '#059669',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: tooltipColors.backgroundColor,
+                    titleColor: tooltipColors.titleColor,
+                    bodyColor: tooltipColors.bodyColor,
+                    borderColor: tooltipColors.borderColor,
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return `₹${context.parsed.y.toLocaleString('en-IN')}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + (value / 1000).toFixed(0) + 'K';
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Initialize Pending Amount by State Chart (Bar Chart)
+let pendingStateChart;
+if (pendingStateData.labels.length > 0 && pendingStateData.values.length > 0) {
+    const ctx = document.getElementById('pendingStateChart').getContext('2d');
+    const tooltipColors = getTooltipColors();
+    pendingStateChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: pendingStateData.labels,
+            datasets: [{
+                label: 'Pending Amount',
+                data: pendingStateData.values,
+                backgroundColor: '#ef4444',
+                borderColor: '#dc2626',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: tooltipColors.backgroundColor,
+                    titleColor: tooltipColors.titleColor,
+                    bodyColor: tooltipColors.bodyColor,
+                    borderColor: tooltipColors.borderColor,
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return `₹${context.parsed.y.toLocaleString('en-IN')}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + (value / 1000).toFixed(0) + 'K';
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Initialize Amount Received Over Time Chart (Line Chart)
+let amountOverTimeChart;
+if (amountOverTimeData.dates.length > 0) {
+    const ctx = document.getElementById('amountOverTimeChart').getContext('2d');
+    const tooltipColors = getTooltipColors();
+    amountOverTimeChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: amountOverTimeData.dates,
+            datasets: [
+                {
+                    label: 'Repayment Amount',
+                    data: amountOverTimeData.repaymentAmounts,
+                    borderColor: '#f97316',
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                },
+                {
+                    label: 'Collected Amount',
+                    data: amountOverTimeData.collectedAmounts,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    backgroundColor: tooltipColors.backgroundColor,
+                    titleColor: tooltipColors.titleColor,
+                    bodyColor: tooltipColors.bodyColor,
+                    borderColor: tooltipColors.borderColor,
+                    borderWidth: 1,
+                    padding: 12
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + (value / 1000).toFixed(0) + 'K';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Initialize Top Cities Collection Rate Chart (Horizontal Bar Chart)
+let topCitiesChart;
+if (topCitiesData.labels.length > 0 && topCitiesData.rates.length > 0) {
+    const ctx = document.getElementById('topCitiesChart').getContext('2d');
+    const tooltipColors = getTooltipColors();
+    
+    // Color code by performance bracket
+    const backgroundColors = topCitiesData.rates.map(rate => {
+        if (rate >= 90) return '#10b981'; // Green
+        if (rate >= 80) return '#f59e0b'; // Orange
+        return '#ef4444'; // Red
+    });
+    
+    topCitiesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topCitiesData.labels,
+            datasets: [{
+                label: 'Collection Rate (%)',
+                data: topCitiesData.rates,
+                backgroundColor: backgroundColors,
+                borderColor: backgroundColors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: tooltipColors.backgroundColor,
+                    titleColor: tooltipColors.titleColor,
+                    bodyColor: tooltipColors.bodyColor,
+                    borderColor: tooltipColors.borderColor,
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.x.toFixed(2) + '%';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Initialize Pending Cases by Amount Bucket Chart (Dual-axis)
+let pendingCasesChart;
+if (pendingCasesData.buckets.length > 0) {
+    const ctx = document.getElementById('pendingCasesChart').getContext('2d');
+    const tooltipColors = getTooltipColors();
+    pendingCasesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: pendingCasesData.buckets,
+            datasets: [
+                {
+                    label: 'Number of Cases',
+                    data: pendingCasesData.caseCounts,
+                    backgroundColor: '#f97316',
+                    borderColor: '#ea580c',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Total Pending Amount (₹)',
+                    data: pendingCasesData.pendingAmounts,
+                    type: 'line',
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    backgroundColor: tooltipColors.backgroundColor,
+                    titleColor: tooltipColors.titleColor,
+                    bodyColor: tooltipColors.bodyColor,
+                    borderColor: tooltipColors.borderColor,
+                    borderWidth: 1,
+                    padding: 12
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Cases'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Total Pending Amount (₹)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + (value / 1000).toFixed(0) + 'K';
+                        }
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Populate Collection % over Time Table
+function populateCollectionTable() {
+    const tbody = document.getElementById('collectionTableBody');
+    if (!tbody || !collectionTableData || collectionTableData.length === 0) return;
+    
+    tbody.innerHTML = '';
+    collectionTableData.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.className = index % 2 === 0 ? 'bg-gray-50/50 dark:bg-slate-800/30' : '';
+        tr.innerHTML = `
+            <td class="py-3 px-4 text-gray-700 dark:text-slate-300">${row.date || ''}</td>
+            <td class="py-3 px-4 text-right text-gray-700 dark:text-slate-300">₹${(row.repayment_amount || 0).toLocaleString('en-IN')}</td>
+            <td class="py-3 px-4 text-right text-green-600 dark:text-green-400 font-medium">₹${(row.collected_amount || 0).toLocaleString('en-IN')}</td>
+            <td class="py-3 px-4 text-right text-red-600 dark:text-red-400 font-medium">₹${(row.pending_amount || 0).toLocaleString('en-IN')}</td>
+            <td class="py-3 px-4 text-right text-gray-700 dark:text-slate-300">${row.total_cases || 0}</td>
+            <td class="py-3 px-4 text-right text-green-600 dark:text-green-400 font-medium">${row.collected_cases || 0}</td>
+            <td class="py-3 px-4 text-right text-red-600 dark:text-red-400 font-medium">${row.pending_cases || 0}</td>
+            <td class="py-3 px-4 text-right text-green-600 dark:text-green-400 font-medium">${(row.collection_percentage || 0).toFixed(1)}%</td>
+            <td class="py-3 px-4 text-right text-red-600 dark:text-red-400 font-medium">${(row.pending_percentage || 0).toFixed(1)}%</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Populate DPD Bucket Table
+function populateDPDTable() {
+    const tbody = document.getElementById('dpdTableBody');
+    if (!tbody || !dpdBucketData || dpdBucketData.length === 0) return;
+    
+    tbody.innerHTML = '';
+    dpdBucketData.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.className = index % 2 === 0 ? 'bg-gray-50/50 dark:bg-slate-800/30' : '';
+        tr.innerHTML = `
+            <td class="py-3 px-4 text-gray-700 dark:text-slate-300">${row.bucket || ''}</td>
+            <td class="py-3 px-4 text-right text-gray-700 dark:text-slate-300 font-medium">${(row.loans || 0).toLocaleString('en-IN')}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Initialize tables on page load
+document.addEventListener('DOMContentLoaded', function() {
+    populateCollectionTable();
+    populateDPDTable();
+});
+</script>
+{% endblock %}

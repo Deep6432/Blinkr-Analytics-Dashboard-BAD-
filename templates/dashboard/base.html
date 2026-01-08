@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>{% block title %}Blinkr Analytics Dashboard{% endblock %}</title>
+    
+    <!-- Favicon -->
+    {% load static %}
+    <link rel="icon" type="image/svg+xml" href="{% static 'dashboard/blinkr-b-logo.svg' %}">
+    <link rel="alternate icon" type="image/svg+xml" href="{% static 'dashboard/blinkr-b-logo.svg' %}">
+    <link rel="apple-touch-icon" href="{% static 'dashboard/blinkr-b-logo.svg' %}">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script>
+        // Initialize theme on page load
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+            document.getElementById('html-root').setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- HTMX (optional, for progressive enhancement) -->
+    <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"></script>
+    
+    <!-- Custom Styles -->
+    {% load humanize %}
+    <link rel="stylesheet" href="{% static 'dashboard/styles.css' %}">
+    
+    <!-- Custom Scripts -->
+    <script src="{% static 'dashboard/dashboard.js' %}" defer></script>
+    
+    {% block extra_head %}{% endblock %}
+    
+    <script>
+        // Remove _refresh parameter from URL if present (clean URL after refresh)
+        (function() {
+            if (window.location.search.includes('_refresh=')) {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('_refresh');
+                window.history.replaceState({}, '', url.toString());
+            }
+        })();
+    </script>
+    
+    <!-- Store token in localStorage if available from session -->
+    {% if request.session.blinkr_token %}
+    <script>
+        // Store token in localStorage from Django session
+        (function() {
+            const token = '{{ request.session.blinkr_token|escapejs }}';
+            if (token && token !== 'None') {
+                localStorage.setItem('blinkr_token', token);
+                console.log('Token stored in localStorage from session');
+            }
+        })();
+    </script>
+    {% endif %}
+</head>
+<body class="bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 antialiased">
+    <div class="min-h-screen flex flex-col">
+        <!-- Top Bar -->
+        {% include 'dashboard/partials/_topbar.html' %}
+        
+        <div class="flex flex-1 relative">
+            <!-- Sidebar -->
+            {% include 'dashboard/partials/_sidebar.html' %}
+            
+            <!-- Main Content -->
+            <main class="flex-1 overflow-y-auto transition-all duration-300 lg:ml-64" id="main-content-wrapper" style="margin-top: 4rem; height: calc(100vh - 4rem);">
+                <div id="main-content" class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+                    <!-- Page Header -->
+                    <div class="mb-8">
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">{% block page_title %}Dashboard{% endblock %}</h1>
+                        <p class="text-sm text-gray-500 dark:text-slate-400 font-medium">{% block page_subtitle %}{% endblock %}</p>
+                    </div>
+                    
+                    <!-- Filters -->
+                    {% block filters %}
+                        {% include 'dashboard/partials/_filters.html' %}
+                    {% endblock %}
+                    
+                    <!-- KPI Cards -->
+                    {% block kpi_cards %}
+                        {% include 'dashboard/partials/_kpi_cards.html' %}
+                    {% endblock %}
+                    
+                    <!-- Page Content -->
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    {% block extra_scripts %}{% endblock %}
+    
+    <script>
+        // Store token in localStorage if available from cookie (after login)
+        (function() {
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            
+            // Check for temporary token cookie (set after login)
+            const tempToken = getCookie('blinkr_token_temp');
+            if (tempToken) {
+                // Store in localStorage
+                localStorage.setItem('blinkr_token', tempToken);
+                console.log('Token stored in localStorage');
+                
+                // Delete the temporary cookie
+                document.cookie = 'blinkr_token_temp=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            }
+            
+            // Also check if token exists in localStorage and sync with session if needed
+            const storedToken = localStorage.getItem('blinkr_token');
+            if (storedToken) {
+                console.log('Token found in localStorage');
+            }
+        })();
+        
+        // Prevent back button navigation after logout
+        // Clear browser cache and prevent back navigation
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                // Page was loaded from cache, reload to ensure fresh data
+                window.location.reload();
+            }
+        });
+        
+        // Prevent back button - redirect to login if not authenticated
+        if (window.history && window.history.pushState) {
+            window.history.pushState(null, null, window.location.href);
+            window.addEventListener('popstate', function() {
+                window.history.pushState(null, null, window.location.href);
+                // If user tries to go back, redirect to login
+                window.location.href = '/login/';
+            });
+        }
+        
+        // Clear localStorage token on logout
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if logout form exists and add event listener
+            const logoutForm = document.querySelector('form[action*="logout"]');
+            if (logoutForm) {
+                logoutForm.addEventListener('submit', function() {
+                    localStorage.removeItem('blinkr_token');
+                    console.log('Token removed from localStorage on logout');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+
