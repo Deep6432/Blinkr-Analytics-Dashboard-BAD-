@@ -978,6 +978,298 @@ function closeRecordsTable() {
     modal.classList.add('hidden');
 }
 
+// Function to open prepayment records table
+function openPrepaymentRecordsTable() {
+    console.log('Opening prepayment records table...');
+    
+    // Get current filter parameters from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const filters = {
+        date_from: urlParams.get('date_from') || '',
+        date_to: urlParams.get('date_to') || '',
+        state: urlParams.getAll('state'),
+        city: urlParams.getAll('city')
+    };
+    
+    // Build API URL for prepayment records
+    const apiUrl = new URL('/api/prepayment-records/', window.location.origin);
+    Object.keys(filters).forEach(key => {
+        if (filters[key]) {
+            if (Array.isArray(filters[key])) {
+                filters[key].forEach(val => {
+                    if (val) apiUrl.searchParams.append(key, val);
+                });
+            } else if (filters[key]) {
+                apiUrl.searchParams.append(key, filters[key]);
+            }
+        }
+    });
+    
+    // Get token from localStorage
+    const token = localStorage.getItem('blinkr_token');
+    
+    // Open the records modal
+    const modal = document.getElementById('records-modal');
+    const loading = document.getElementById('records-loading');
+    const error = document.getElementById('records-error');
+    const tableContainer = document.getElementById('records-table-container');
+    const searchContainer = document.getElementById('records-search-container');
+    
+    // Show modal and loading state
+    modal.classList.remove('hidden');
+    loading.classList.remove('hidden');
+    error.classList.add('hidden');
+    tableContainer.classList.add('hidden');
+    if (searchContainer) searchContainer.classList.add('hidden');
+    
+    // Update modal title
+    const modalTitle = document.getElementById('modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = 'Prepayment Records';
+    }
+    
+    // Fetch prepayment records
+    fetch(apiUrl.toString(), {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        loading.classList.add('hidden');
+        if (data.error) {
+            error.classList.remove('hidden');
+            error.textContent = data.error;
+            tableContainer.classList.add('hidden');
+        } else if (!data.records || data.records.length === 0) {
+            // Show helpful message when no records found
+            error.classList.remove('hidden');
+            let errorMsg = 'No prepayment records found for the selected date range and filters.';
+            if (data.debug_info) {
+                console.log('[Prepayment Records] Debug info:', data.debug_info);
+                if (data.debug_info.collection_api_found) {
+                    errorMsg += ` Found ${data.debug_info.total_collection_records} collection records, but none matched prepayment criteria.`;
+                    if (data.debug_info.sample_record_keys) {
+                        console.log('[Prepayment Records] Available fields in collection records:', data.debug_info.sample_record_keys);
+                    }
+                } else {
+                    errorMsg += ' Collection records API endpoint not available. Please contact support to configure the correct API endpoint.';
+                }
+            }
+            error.textContent = errorMsg;
+            tableContainer.classList.add('hidden');
+        } else {
+            error.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            if (searchContainer) searchContainer.classList.remove('hidden');
+            displayRecordsTable(data.records || [], true); // Use prepayment columns for prepayment records
+            document.getElementById('records-count').textContent = data.records ? data.records.length : 0;
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching prepayment records:', error);
+        loading.classList.add('hidden');
+        error.classList.remove('hidden');
+        error.textContent = 'Failed to load prepayment records: ' + error.message;
+        tableContainer.classList.add('hidden');
+    });
+}
+
+// Function to open on_time records table
+function openOnTimeRecordsTable() {
+    console.log('Opening on_time records table...');
+    
+    // Get current filter parameters from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const filters = {
+        date_from: urlParams.get('date_from') || '',
+        date_to: urlParams.get('date_to') || '',
+        state: urlParams.getAll('state'),
+        city: urlParams.getAll('city')
+    };
+    
+    // Build API URL for on_time records
+    const apiUrl = new URL('/api/on-time-records/', window.location.origin);
+    Object.keys(filters).forEach(key => {
+        if (filters[key]) {
+            if (Array.isArray(filters[key])) {
+                filters[key].forEach(val => {
+                    if (val) apiUrl.searchParams.append(key, val);
+                });
+            } else if (filters[key]) {
+                apiUrl.searchParams.append(key, filters[key]);
+            }
+        }
+    });
+    
+    // Get token from localStorage
+    const token = localStorage.getItem('blinkr_token');
+    
+    // Open the records modal
+    const modal = document.getElementById('records-modal');
+    const loading = document.getElementById('records-loading');
+    const error = document.getElementById('records-error');
+    const tableContainer = document.getElementById('records-table-container');
+    const searchContainer = document.getElementById('records-search-container');
+    
+    // Show modal and loading state
+    modal.classList.remove('hidden');
+    loading.classList.remove('hidden');
+    error.classList.add('hidden');
+    tableContainer.classList.add('hidden');
+    if (searchContainer) searchContainer.classList.add('hidden');
+    
+    // Update modal title
+    const modalTitle = document.getElementById('modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = 'On Time Records';
+    }
+    
+    // Fetch on_time records
+    fetch(apiUrl.toString(), {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        loading.classList.add('hidden');
+        if (data.error) {
+            error.classList.remove('hidden');
+            error.textContent = data.error;
+            tableContainer.classList.add('hidden');
+        } else if (!data.records || data.records.length === 0) {
+            error.classList.remove('hidden');
+            error.textContent = 'No on_time records found for the selected date range and filters.';
+            tableContainer.classList.add('hidden');
+        } else {
+            error.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            if (searchContainer) searchContainer.classList.remove('hidden');
+            displayRecordsTable(data.records || [], false, true); // Use on-time columns
+            document.getElementById('records-count').textContent = data.records ? data.records.length : 0;
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching on_time records:', error);
+        loading.classList.add('hidden');
+        error.classList.remove('hidden');
+        error.textContent = 'Failed to load on_time records: ' + error.message;
+        tableContainer.classList.add('hidden');
+    });
+}
+
+// Function to open overdue records table
+function openOverdueRecordsTable() {
+    console.log('Opening overdue records table...');
+    
+    // Get current filter parameters from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const filters = {
+        date_from: urlParams.get('date_from') || '',
+        date_to: urlParams.get('date_to') || '',
+        state: urlParams.getAll('state'),
+        city: urlParams.getAll('city')
+    };
+    
+    // Build API URL for overdue records
+    const apiUrl = new URL('/api/overdue-records/', window.location.origin);
+    Object.keys(filters).forEach(key => {
+        if (filters[key]) {
+            if (Array.isArray(filters[key])) {
+                filters[key].forEach(val => {
+                    if (val) apiUrl.searchParams.append(key, val);
+                });
+            } else if (filters[key]) {
+                apiUrl.searchParams.append(key, filters[key]);
+            }
+        }
+    });
+    
+    // Get token from localStorage
+    const token = localStorage.getItem('blinkr_token');
+    
+    // Open the records modal
+    const modal = document.getElementById('records-modal');
+    const loading = document.getElementById('records-loading');
+    const error = document.getElementById('records-error');
+    const tableContainer = document.getElementById('records-table-container');
+    const searchContainer = document.getElementById('records-search-container');
+    
+    // Show modal and loading state
+    modal.classList.remove('hidden');
+    loading.classList.remove('hidden');
+    error.classList.add('hidden');
+    tableContainer.classList.add('hidden');
+    if (searchContainer) searchContainer.classList.add('hidden');
+    
+    // Update modal title
+    const modalTitle = document.getElementById('modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = 'Overdue Records';
+    }
+    
+    // Fetch overdue records
+    fetch(apiUrl.toString(), {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        loading.classList.add('hidden');
+        if (data.error) {
+            error.classList.remove('hidden');
+            error.textContent = data.error;
+            tableContainer.classList.add('hidden');
+        } else if (!data.records || data.records.length === 0) {
+            error.classList.remove('hidden');
+            error.textContent = 'No overdue records found for the selected date range and filters.';
+            tableContainer.classList.add('hidden');
+        } else {
+            error.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            if (searchContainer) searchContainer.classList.remove('hidden');
+            displayRecordsTable(data.records || [], false, false, true); // Use overdue columns
+            document.getElementById('records-count').textContent = data.records ? data.records.length : 0;
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching overdue records:', error);
+        loading.classList.add('hidden');
+        error.classList.remove('hidden');
+        error.textContent = 'Failed to load overdue records: ' + error.message;
+        tableContainer.classList.add('hidden');
+    });
+}
+
 // Store original records for filtering
 let allRecordsData = [];
 
@@ -1007,7 +1299,49 @@ const columnMapping = [
         ['TENURE', ['tenure', 'Tenure', 'TENURE', 'loan_tenure', 'tenure_days']]
 ];
 
-function displayRecordsTable(records) {
+// Column mapping for prepayment records (excludes: ID, SOURCE, PERSONAL EMAIL, OFFICE EMAIL, PINCODE, COUNTRY, ADDRESS, SANCTION DATE, LOAN AMOUNT, DISBURSAL DATE, DISBURSAL AMOUNT, PROCESSING FEE, INTEREST AMOUNT, REPAYMENT AMOUNT, TENURE)
+const prepaymentColumnMapping = [
+        ['LOAN_NO', ['loan_no', 'Loan_No', 'LOAN_NO', 'loan_number', 'Loan_Number', 'loanNumber', 'loan_id', 'Loan_ID', 'loanId', 'loan_id_number', 'application_id', 'Application_ID', 'application_number', 'Application_Number', 'app_id', 'App_ID']],
+        ['FULLNAME', ['fullname', 'FullName', 'full_name', 'FULLNAME', 'name', 'Name', 'customer_name']],
+        ['PAN', ['pan', 'PAN', 'Pan', 'pan_number', 'PAN_Number']],
+        ['MOBILE', ['mobile', 'Mobile', 'MOBILE', 'phone', 'Phone', 'mobile_number', 'contact_number']],
+        ['CITY', ['city', 'City', 'CITY']],
+        ['STATE', ['state', 'State', 'STATE']],
+        ['DATE OF RECEIVED', ['date_of_recived', 'date_of_received', 'dateOfReceived', 'received_date', 'receivedDate', 'collection_date', 'collectionDate', 'date_received', 'dateReceived', 'Date_Of_Received', 'DATE_OF_RECEIVED', 'date_of_receive', 'dateOfReceive', 'receivedDate', 'received_date_time', 'collectionDate', 'collection_date_time', 'dateReceived', 'date_received_ist', 'received_date_ist', 'collection_date_ist']],
+        ['REPAYMENT DATE', ['repayment_date', 'Repayment_Date', 'REPAYMENT_DATE', 'repay_date']],
+        ['PREPAYMENT AMOUNT', ['prepayment_amount', 'prepaymentAmount', 'prepayment_Amount', 'PREPAYMENT_AMOUNT', 'prepayment_amt', 'prepaymentAmt']],
+        ['REPAYMENT AMOUNT', ['repayment_amount', 'repaymentAmount', 'repayment_Amount', 'REPAYMENT_AMOUNT', 'repayment_amt', 'repaymentAmt', 'total_collection_amount', 'totalCollectionAmount', 'TOTAL_COLLECTION_AMOUNT']]
+];
+
+// Column mapping for On Time Records (uses DUE DATE AMOUNT instead of PREPAYMENT AMOUNT)
+const onTimeColumnMapping = [
+        ['LOAN_NO', ['loan_no', 'Loan_No', 'LOAN_NO', 'loan_number', 'Loan_Number', 'loanNumber', 'loan_id', 'Loan_ID', 'loanId', 'loan_id_number', 'application_id', 'Application_ID', 'application_number', 'Application_Number', 'app_id', 'App_ID']],
+        ['FULLNAME', ['fullname', 'FullName', 'full_name', 'FULLNAME', 'name', 'Name', 'customer_name']],
+        ['PAN', ['pan', 'PAN', 'Pan', 'pan_number', 'PAN_Number']],
+        ['MOBILE', ['mobile', 'Mobile', 'MOBILE', 'phone', 'Phone', 'mobile_number', 'contact_number']],
+        ['CITY', ['city', 'City', 'CITY']],
+        ['STATE', ['state', 'State', 'STATE']],
+        ['DATE OF RECEIVED', ['date_of_recived', 'date_of_received', 'dateOfReceived', 'received_date', 'receivedDate', 'collection_date', 'collectionDate', 'date_received', 'dateReceived', 'Date_Of_Received', 'DATE_OF_RECEIVED', 'date_of_receive', 'dateOfReceive', 'receivedDate', 'received_date_time', 'collectionDate', 'collection_date_time', 'dateReceived', 'date_received_ist', 'received_date_ist', 'collection_date_ist']],
+        ['REPAYMENT DATE', ['repayment_date', 'Repayment_Date', 'REPAYMENT_DATE', 'repay_date']],
+        ['DUE DATE AMOUNT', ['due_date_amount', 'dueDateAmount', 'due_date_Amount', 'DUE_DATE_AMOUNT', 'due_date_amt', 'dueDateAmt', 'on_time_amount', 'onTimeAmount', 'ON_TIME_AMOUNT']],
+        ['REPAYMENT AMOUNT', ['repayment_amount', 'repaymentAmount', 'repayment_Amount', 'REPAYMENT_AMOUNT', 'repayment_amt', 'repaymentAmt', 'total_collection_amount', 'totalCollectionAmount', 'TOTAL_COLLECTION_AMOUNT']]
+];
+
+// Column mapping for Overdue Records (same as On Time Records but with OVERDUE AMOUNT instead of DUE DATE AMOUNT)
+const overdueColumnMapping = [
+        ['LOAN_NO', ['loan_no', 'Loan_No', 'LOAN_NO', 'loan_number', 'Loan_Number', 'loanNumber', 'loan_id', 'Loan_ID', 'loanId', 'loan_id_number', 'application_id', 'Application_ID', 'application_number', 'Application_Number', 'app_id', 'App_ID']],
+        ['FULLNAME', ['fullname', 'FullName', 'full_name', 'FULLNAME', 'name', 'Name', 'customer_name']],
+        ['PAN', ['pan', 'PAN', 'Pan', 'pan_number', 'PAN_Number']],
+        ['MOBILE', ['mobile', 'Mobile', 'MOBILE', 'phone', 'Phone', 'mobile_number', 'contact_number']],
+        ['CITY', ['city', 'City', 'CITY']],
+        ['STATE', ['state', 'State', 'STATE']],
+        ['DATE OF RECEIVED', ['date_of_recived', 'date_of_received', 'dateOfReceived', 'received_date', 'receivedDate', 'collection_date', 'collectionDate', 'date_received', 'dateReceived', 'Date_Of_Received', 'DATE_OF_RECEIVED', 'date_of_receive', 'dateOfReceive', 'receivedDate', 'received_date_time', 'collectionDate', 'collection_date_time', 'dateReceived', 'date_received_ist', 'received_date_ist', 'collection_date_ist']],
+        ['REPAYMENT DATE', ['repayment_date', 'Repayment_Date', 'REPAYMENT_DATE', 'repay_date']],
+        ['OVERDUE AMOUNT', ['overdue_amount', 'overdueAmount', 'overdue_Amount', 'OVERDUE_AMOUNT', 'overdue_amt', 'overdueAmt']],
+        ['REPAYMENT AMOUNT', ['repayment_amount', 'repaymentAmount', 'repayment_Amount', 'REPAYMENT_AMOUNT', 'repayment_amt', 'repaymentAmt', 'total_collection_amount', 'totalCollectionAmount', 'TOTAL_COLLECTION_AMOUNT']]
+];
+
+function displayRecordsTable(records, usePrepaymentColumns = false, useOnTimeColumns = false, useOverdueColumns = false) {
     const tableContainer = document.getElementById('records-table-container');
     const tableHeader = document.getElementById('records-table-header');
     const tableBody = document.getElementById('records-table-body');
@@ -1016,10 +1350,23 @@ function displayRecordsTable(records) {
     // Store original records
     allRecordsData = records || [];
     
+    // Use appropriate column mapping
+    let currentColumnMapping;
+    if (useOverdueColumns) {
+        currentColumnMapping = overdueColumnMapping;
+    } else if (useOnTimeColumns) {
+        currentColumnMapping = onTimeColumnMapping;
+    } else if (usePrepaymentColumns) {
+        currentColumnMapping = prepaymentColumnMapping;
+    } else {
+        currentColumnMapping = columnMapping;
+    }
+    
     if (!records || records.length === 0) {
         tableContainer.classList.remove('hidden');
         searchContainer.classList.add('hidden');
-        tableBody.innerHTML = '<tr><td colspan="22" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">No records found</td></tr>';
+        const colCount = currentColumnMapping.length;
+        tableBody.innerHTML = `<tr><td colspan="${colCount}" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">No records found</td></tr>`;
         return;
     }
     
@@ -1036,13 +1383,13 @@ function displayRecordsTable(records) {
     
     // Build table header first
     if (tableHeader) {
-        tableHeader.innerHTML = columnMapping.map(([displayName]) => 
+        tableHeader.innerHTML = currentColumnMapping.map(([displayName]) =>
             `<th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap sticky top-0" style="background-color: #00072D;">${displayName}</th>`
         ).join('');
     }
     
     // Display all records initially
-    renderTableRecords(records);
+    renderTableRecords(records, usePrepaymentColumns, useOnTimeColumns, useOverdueColumns);
     
     // Show table container
     if (tableContainer) {
@@ -1059,9 +1406,9 @@ function getFieldValue(record, fieldNames) {
             }
         }
         
-        // For disbursal date and loan_no, try case-insensitive search
+        // For disbursal date, loan_no, and date of received, try case-insensitive search
         const displayName = fieldNames[0];
-        if (displayName === 'DISBURSAL DATE' || displayName === 'LOAN_NO') {
+        if (displayName === 'DISBURSAL DATE' || displayName === 'LOAN_NO' || displayName === 'DATE OF RECEIVED') {
             const recordKeys = Object.keys(record);
             const lowerKeys = recordKeys.map(k => k.toLowerCase());
             
@@ -1073,6 +1420,38 @@ function getFieldValue(record, fieldNames) {
                     console.log(`Found ${displayName} (case-insensitive):`, recordKeys[index], record[recordKeys[index]]);
                     return record[recordKeys[index]];
                 }
+            }
+            
+            // For DATE OF RECEIVED, try more aggressive partial matches
+            if (displayName === 'DATE OF RECEIVED') {
+                // Strategy 1: Try to find any field that contains "date" and ("received" or "receive" or "collection")
+                for (const key of recordKeys) {
+                    const lowerKey = key.toLowerCase();
+                    if ((lowerKey.includes('date') || lowerKey.includes('dt')) && 
+                        (lowerKey.includes('received') || lowerKey.includes('receive') || lowerKey.includes('collection'))) {
+                        console.log('[DATE OF RECEIVED] Found (partial match):', key, '=', record[key]);
+                        return record[key];
+                    }
+                }
+                
+                // Strategy 2: Try fields that just contain "received" or "receive" (might not have "date" in name)
+                for (const key of recordKeys) {
+                    const lowerKey = key.toLowerCase();
+                    if (lowerKey.includes('received') || lowerKey.includes('receive')) {
+                        console.log('[DATE OF RECEIVED] Found (received/receive match):', key, '=', record[key]);
+                        return record[key];
+                    }
+                }
+                
+                // Strategy 3: Try fields that contain "collection" (collection date might be the date of received)
+                for (const key of recordKeys) {
+                    const lowerKey = key.toLowerCase();
+                    if (lowerKey.includes('collection') && (lowerKey.includes('date') || lowerKey.includes('dt') || lowerKey.includes('time'))) {
+                        console.log('[DATE OF RECEIVED] Found (collection date match):', key, '=', record[key]);
+                        return record[key];
+                    }
+                }
+                
             }
             
             // Also try common variations for loan_no
@@ -1141,11 +1520,15 @@ function formatValue(value, columnName) {
         const dateStr = String(value);
         
         // Format dates - handle various date formats (only for date columns)
-        const dateColumns = ['SANCTION DATE', 'DISBURSAL DATE', 'REPAYMENT DATE'];
+        const dateColumns = ['SANCTION DATE', 'DISBURSAL DATE', 'REPAYMENT DATE', 'DATE OF RECEIVED'];
         if (dateColumns.includes(columnName)) {
-            // Check for ISO date format (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss)
+            // Check for ISO date format (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss.SSSZ)
             if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
-                return dateStr.split('T')[0]; // Remove time if present
+                // Extract just the date part (YYYY-MM-DD)
+                const datePart = dateStr.split('T')[0];
+                // Format as DD/MM/YY for better readability
+                const [year, month, day] = datePart.split('-');
+                return `${day}/${month}/${year.slice(-2)}`;
             }
             // Check for other date formats (DD-MM-YYYY, DD/MM/YYYY, etc.)
             if (dateStr.match(/^\d{2}[-\/]\d{2}[-\/]\d{4}/)) {
@@ -1156,8 +1539,17 @@ function formatValue(value, columnName) {
                 const timestamp = String(value).length === 10 ? parseFloat(value) * 1000 : parseFloat(value);
                 const date = new Date(timestamp);
                 if (!isNaN(date.getTime())) {
-                    return date.toISOString().split('T')[0];
+                    const isoDate = date.toISOString().split('T')[0];
+                    const [year, month, day] = isoDate.split('-');
+                    return `${day}/${month}/${year.slice(-2)}`;
                 }
+            }
+            // Try parsing as Date object if it's already a Date
+            if (value instanceof Date) {
+                const year = value.getFullYear();
+                const month = String(value.getMonth() + 1).padStart(2, '0');
+                const day = String(value.getDate()).padStart(2, '0');
+                return `${day}/${month}/${String(year).slice(-2)}`;
             }
         }
         
@@ -1167,7 +1559,7 @@ function formatValue(value, columnName) {
         }
         
         // Handle amount columns - add rupee sign and format with commas
-        const amountColumns = ['LOAN AMOUNT', 'DISBURSAL AMOUNT', 'PROCESSING FEE', 'INTEREST AMOUNT', 'REPAYMENT AMOUNT'];
+        const amountColumns = ['LOAN AMOUNT', 'DISBURSAL AMOUNT', 'PROCESSING FEE', 'INTEREST AMOUNT', 'REPAYMENT AMOUNT', 'PREPAYMENT AMOUNT', 'DUE DATE AMOUNT', 'OVERDUE AMOUNT'];
         if (amountColumns.includes(columnName)) {
             if (typeof value === 'number' || (!isNaN(value) && !isNaN(parseFloat(value)))) {
                 const num = parseFloat(value);
@@ -1190,14 +1582,53 @@ function formatValue(value, columnName) {
 }
 
 // Function to render table records
-function renderTableRecords(records) {
+function renderTableRecords(records, usePrepaymentColumns = false, useOnTimeColumns = false, useOverdueColumns = false) {
     const tableBody = document.getElementById('records-table-body');
     const tableHeader = document.getElementById('records-table-header');
     
     if (!tableBody || !tableHeader) return;
     
+    // Use appropriate column mapping
+    let currentColumnMapping;
+    if (useOverdueColumns) {
+        currentColumnMapping = overdueColumnMapping;
+    } else if (useOnTimeColumns) {
+        currentColumnMapping = onTimeColumnMapping;
+    } else if (usePrepaymentColumns) {
+        currentColumnMapping = prepaymentColumnMapping;
+    } else {
+        currentColumnMapping = columnMapping;
+    }
+    
+    // Debug: Log available fields in first record for prepayment/on-time/overdue records
+    if ((usePrepaymentColumns || useOnTimeColumns || useOverdueColumns) && records && records.length > 0) {
+        const firstRecord = records[0];
+        const allKeys = Object.keys(firstRecord);
+        console.log('[Prepayment Records] ===== ALL FIELDS IN FIRST RECORD =====');
+        console.log('[Prepayment Records] All available fields:', allKeys);
+        console.log('[Prepayment Records] Full first record:', JSON.stringify(firstRecord, null, 2));
+        
+        // Find all date-related fields
+        const dateFields = allKeys.filter(k => {
+            const lower = k.toLowerCase();
+            return lower.includes('date') || lower.includes('received') || lower.includes('receive') || 
+                   lower.includes('collection') || lower.includes('dt') || lower.includes('time') ||
+                   lower.includes('paid') || lower.includes('payment');
+        });
+        console.log('[Prepayment Records] Date-related fields found:', dateFields);
+        if (dateFields.length > 0) {
+            dateFields.forEach(field => {
+                console.log(`[Prepayment Records]   '${field}': ${firstRecord[field]} (type: ${typeof firstRecord[field]})`);
+            });
+        } else {
+            console.log('[Prepayment Records] ⚠ NO DATE-RELATED FIELDS FOUND!');
+        }
+        console.log('[Prepayment Records] ======================================');
+    }
+    
     // Store records for detail view (before building rows)
     window.currentDisplayedRecords = records;
+    window.currentColumnMapping = currentColumnMapping; // Store for use in other functions
     
     // Build table rows with click handlers and alternating row colors
     tableBody.innerHTML = records.map((record, index) => {
@@ -1207,7 +1638,7 @@ function renderTableRecords(records) {
             : 'bg-gray-50 dark:bg-slate-700/30';
         
         return `<tr class="${rowBgClass} hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors border-b border-gray-200 dark:border-slate-700 cursor-pointer" onclick="showRecordDetails(${index})" title="Click to view details">
-            ${columnMapping.map(([displayName, fieldNames]) => {
+            ${currentColumnMapping.map(([displayName, fieldNames]) => {
                 const value = getFieldValue(record, fieldNames);
                 const displayValue = formatValue(value, displayName);
                 return `<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">${displayValue}</td>`;
@@ -1233,9 +1664,14 @@ function filterRecordsTable() {
         return;
     }
     
+    // Determine which column mapping to use
+    const isPrepaymentTable = window.currentColumnMapping === prepaymentColumnMapping;
+    const isOnTimeTable = window.currentColumnMapping === onTimeColumnMapping;
+    const isOverdueTable = window.currentColumnMapping === overdueColumnMapping;
+    
     // If search is empty, show all records
     if (searchTerm === '') {
-        renderTableRecords(allRecordsData);
+        renderTableRecords(allRecordsData, isPrepaymentTable, isOnTimeTable, isOverdueTable);
         return;
     }
     
@@ -1263,13 +1699,23 @@ function filterRecordsTable() {
     });
     
     // Render filtered records
-    renderTableRecords(filteredRecords);
+    renderTableRecords(filteredRecords, isPrepaymentTable, isOnTimeTable, isOverdueTable);
     
     // Show "No results" message if no matches
     if (filteredRecords.length === 0) {
         const tableBody = document.getElementById('records-table-body');
         if (tableBody) {
-            const columnCount = columnMapping.length;
+            let currentColumnMapping;
+            if (isOverdueTable) {
+                currentColumnMapping = overdueColumnMapping;
+            } else if (isOnTimeTable) {
+                currentColumnMapping = onTimeColumnMapping;
+            } else if (isPrepaymentTable) {
+                currentColumnMapping = prepaymentColumnMapping;
+            } else {
+                currentColumnMapping = columnMapping;
+            }
+            const columnCount = currentColumnMapping.length;
             tableBody.innerHTML = `<tr><td colspan="${columnCount}" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">No records found matching "${searchTerm}"</td></tr>`;
         }
     }
@@ -1287,12 +1733,13 @@ function showRecordDetails(index) {
     
     if (!modal || !content) return;
     
-    // Build key-value pairs
+    // Build key-value pairs using the current column mapping
+    const currentColumnMapping = window.currentColumnMapping || columnMapping;
     let html = '';
-    columnMapping.forEach(([displayName, fieldNames]) => {
+    currentColumnMapping.forEach(([displayName, fieldNames]) => {
         const value = getFieldValue(record, fieldNames);
         const displayValue = formatValue(value, displayName);
-        
+
         html += `
             <div class="flex flex-col sm:flex-row sm:items-center border-b border-gray-200 dark:border-slate-700 pb-3 last:border-b-0">
                 <div class="font-semibold text-sm text-gray-700 dark:text-slate-300 mb-1 sm:mb-0 sm:w-1/3 sm:pr-4" style="color: #00072D;">

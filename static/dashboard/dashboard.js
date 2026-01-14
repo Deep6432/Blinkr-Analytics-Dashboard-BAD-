@@ -28,6 +28,13 @@
             this.setupMobileSidebar();
             this.setupHTMX();
             this.updateLastUpdated();
+            
+            // OPTIMIZATION: Immediately fetch collection metrics via AJAX on page load
+            // This allows the page to render quickly while collection data loads in background
+            console.log('⚡ Loading collection metrics in background...');
+            setTimeout(() => {
+                this.refreshData();
+            }, 100); // Small delay to ensure page is fully rendered
         },
         
         /**
@@ -411,7 +418,8 @@
                 
                 // Get all collection metrics elements
                 const elements = {
-                    total: document.querySelector('[data-kpi="collection_total"]'),
+                    mainTotal: document.querySelector('[data-kpi="collection_total"]'),  // Main heading
+                    total: document.querySelector('[data-kpi="collection_total_amount_display"]'),  // Breakdown total
                     freshAmount: document.querySelector('[data-kpi="collection_fresh_amount"]'),
                     reloanAmount: document.querySelector('[data-kpi="collection_reloan_amount"]'),
                     prepaymentAmount: document.querySelector('[data-kpi="collection_prepayment_amount"]'),
@@ -424,6 +432,14 @@
                     dueDateCount: document.querySelector('[data-kpi="collection_due_date_count"]'),
                     overdueCount: document.querySelector('[data-kpi="collection_overdue_count"]')
                 };
+                
+                // Debug: Log element selection
+                console.log('Collection Metrics Elements:', {
+                    mainTotal: elements.mainTotal ? 'Found' : 'NOT FOUND',
+                    breakdownTotal: elements.total ? 'Found' : 'NOT FOUND',
+                    freshAmount: elements.freshAmount ? 'Found' : 'NOT FOUND',
+                    reloanAmount: elements.reloanAmount ? 'Found' : 'NOT FOUND'
+                });
                 
                 const metrics = data.collection_metrics;
                 
@@ -470,27 +486,67 @@
                     return false;
                 }
                 
+                // Get Fresh and Reloan amounts first
+                const freshAmount = getValue(metrics, 'fresh_collection_amount', 'freshCollectionAmount', 'fresh_amount', 'fresh') || 0;
+                const reloanAmount = getValue(metrics, 'reloan_collection_amount', 'reloanCollectionAmount', 'reloan_amount', 'reloan') || 0;
+                
+                // Calculate Total as Fresh + Reloan (always, even if total_collection_amount exists)
+                const totalAmount = (parseFloat(freshAmount) || 0) + (parseFloat(reloanAmount) || 0);
+                
                 // Update all amount fields with multiple field name variations
-                updateElement(elements.total, getValue(metrics, 'total_collection_amount', 'totalCollectionAmount', 'total_amount', 'collection_amount', 'total'));
-                updateElement(elements.freshAmount, getValue(metrics, 'fresh_collection_amount', 'freshCollectionAmount', 'fresh_amount', 'fresh'));
-                updateElement(elements.reloanAmount, getValue(metrics, 'reloan_collection_amount', 'reloanCollectionAmount', 'reloan_amount', 'reloan'));
+                // Update the main heading total first
+                if (elements.mainTotal) {
+                    updateElement(elements.mainTotal, totalAmount);
+                    console.log('✓ Updated main heading total:', totalAmount);
+                } else {
+                    console.log('⚠ Main total element not found');
+                }
+                // Update the breakdown total
+                if (elements.total) {
+                    updateElement(elements.total, totalAmount);
+                    console.log('✓ Updated breakdown total:', totalAmount);
+                } else {
+                    console.log('⚠ Breakdown total element not found - trying alternative selector');
+                    // Try alternative selector
+                    const altTotal = document.querySelector('[data-kpi="collection_total_amount_display"]');
+                    if (altTotal) {
+                        updateElement(altTotal, totalAmount);
+                        console.log('✓ Updated breakdown total (alternative):', totalAmount);
+                    }
+                }
+                updateElement(elements.freshAmount, freshAmount);
+                updateElement(elements.reloanAmount, reloanAmount);
+                
+                console.log('Collection amounts calculated:', {
+                    fresh: freshAmount,
+                    reloan: reloanAmount,
+                    total: totalAmount,
+                    'fresh + reloan': (parseFloat(freshAmount) || 0) + (parseFloat(reloanAmount) || 0)
+                });
                 updateElement(elements.prepaymentAmount, getValue(metrics, 'prepayment_amount', 'prepaymentAmount', 'prepayment'));
                 updateElement(elements.onTime, getValue(metrics, 'due_date_amount', 'dueDateAmount', 'on_time_collection', 'onTimeCollection', 'on_time', 'onTime', 'on_time_amount', 'onTimeAmount', 'ontime', 'ontime_amount', 'ontimeAmount', 'onTime_amount', 'on_time_collection_amount', 'onTimeCollectionAmount', 'due_date_collection', 'dueDateCollection', 'on_time_amount_collection', 'onTimeAmountCollection'));
                 updateElement(elements.overdue, getValue(metrics, 'overdue_amount', 'overdueAmount', 'overdue_collection', 'overdueCollection', 'overdue', 'overDue'));
                 
+                // Get Fresh and Reloan counts first
+                const freshCount = getValue(metrics, 'fresh_collection_count', 'freshCollectionCount', 'fresh_count', 'freshCount', 'fresh') || 0;
+                const reloanCount = getValue(metrics, 'reloan_collection_count', 'reloanCollectionCount', 'reloan_count', 'reloanCount', 'reloan') || 0;
+                
+                // Calculate Total count as Fresh + Reloan (always, even if total_collection_count exists)
+                const totalCount = (parseInt(freshCount) || 0) + (parseInt(reloanCount) || 0);
+                
                 // Update all count fields with multiple field name variations
-                updateElement(elements.totalCount, getValue(metrics, 'total_collection_count', 'totalCollectionCount', 'total_count', 'totalCount', 'total'), false);
-                updateElement(elements.freshCount, getValue(metrics, 'fresh_collection_count', 'freshCollectionCount', 'fresh_count', 'freshCount', 'fresh'), false);
-                updateElement(elements.reloanCount, getValue(metrics, 'reloan_collection_count', 'reloanCollectionCount', 'reloan_count', 'reloanCount', 'reloan'), false);
+                updateElement(elements.totalCount, totalCount, false);
+                updateElement(elements.freshCount, freshCount, false);
+                updateElement(elements.reloanCount, reloanCount, false);
                 updateElement(elements.prepaymentCount, getValue(metrics, 'prepayment_count', 'prepaymentCount', 'prepayment'), false);
                 updateElement(elements.dueDateCount, getValue(metrics, 'due_date_count', 'dueDateCount', 'on_time_count', 'onTimeCount', 'onTime', 'ontime', 'ontime_count', 'onTime_count', 'on_time_collection_count', 'onTimeCollectionCount', 'due_date_collection_count', 'dueDateCollectionCount'), false);
                 updateElement(elements.overdueCount, getValue(metrics, 'overdue_count', 'overdueCount', 'overdue'), false);
                 
                 console.log('✓ Updated all Collection Metrics fields');
                 console.log('Collection Metrics Summary:', {
-                    total: getValue(metrics, 'total_collection_amount', 'totalCollectionAmount', 'total_amount', 'collection_amount', 'total'),
-                    fresh: getValue(metrics, 'fresh_collection_amount', 'freshCollectionAmount', 'fresh_amount', 'fresh'),
-                    reloan: getValue(metrics, 'reloan_collection_amount', 'reloanCollectionAmount', 'reloan_amount', 'reloan'),
+                    total: totalAmount + ' (calculated as Fresh + Reloan)',
+                    fresh: freshAmount,
+                    reloan: reloanAmount,
                     prepayment: getValue(metrics, 'prepayment_amount', 'prepaymentAmount', 'prepayment'),
                     onTime: getValue(metrics, 'due_date_amount', 'dueDateAmount', 'on_time_collection', 'onTimeCollection', 'on_time', 'onTime', 'on_time_amount', 'onTimeAmount', 'ontime', 'ontime_amount', 'ontimeAmount', 'onTime_amount', 'on_time_collection_amount', 'onTimeCollectionAmount', 'due_date_collection', 'dueDateCollection', 'on_time_amount_collection', 'onTimeAmountCollection'),
                     overdue: getValue(metrics, 'overdue_amount', 'overdueAmount', 'overdue_collection', 'overdueCollection', 'overdue', 'overDue')

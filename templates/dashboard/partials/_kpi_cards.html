@@ -239,7 +239,7 @@
             <div class="flex-1">
                 <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Collection Amount As Of Date Range</p>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">
-                    <span data-kpi="collection_total">{% if collection_metrics %}{% if collection_metrics.total_collection_amount %}₹{{ collection_metrics.total_collection_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.totalCollectionAmount %}₹{{ collection_metrics.totalCollectionAmount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.total_amount %}₹{{ collection_metrics.total_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.collection_amount %}₹{{ collection_metrics.collection_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.total %}₹{{ collection_metrics.total|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</span>
+                    <span data-kpi="collection_total">{% if collection_metrics %}{% if collection_metrics.fresh_collection_amount or collection_metrics.reloan_collection_amount %}{% with fresh=collection_metrics.fresh_collection_amount|default:0 %}{% with reloan=collection_metrics.reloan_collection_amount|default:0 %}₹{{ fresh|add:reloan|floatformat:0|intcomma }}{% endwith %}{% endwith %}{% elif collection_metrics.total_collection_amount %}₹{{ collection_metrics.total_collection_amount|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</span>
                 </p>
             </div>
             <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: #00072D;">
@@ -259,8 +259,8 @@
                         <span class="w-2 h-2 rounded-full bg-gray-500"></span>
                         <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Total</span>
                     </div>
-                    <div class="text-gray-900 dark:text-white font-bold text-sm" data-kpi="collection_total_amount_display">{% if collection_metrics %}{% if collection_metrics.total_collection_amount %}₹{{ collection_metrics.total_collection_amount|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</div>
-                    <div class="text-gray-500 dark:text-slate-400 text-xs" data-kpi="collection_total_count">{% if collection_metrics %}{% if collection_metrics.total_collection_count %}{{ collection_metrics.total_collection_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</div>
+                    <div class="text-gray-900 dark:text-white font-bold text-sm" data-kpi="collection_total_amount_display">{% if collection_metrics %}{% if collection_metrics.fresh_collection_amount or collection_metrics.reloan_collection_amount %}{% with fresh=collection_metrics.fresh_collection_amount|default:0 %}{% with reloan=collection_metrics.reloan_collection_amount|default:0 %}₹{{ fresh|add:reloan|floatformat:0|intcomma }}{% endwith %}{% endwith %}{% elif collection_metrics.total_collection_amount and collection_metrics.total_collection_amount > 0 %}₹{{ collection_metrics.total_collection_amount|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</div>
+                    <div class="text-gray-500 dark:text-slate-400 text-xs" data-kpi="collection_total_count">{% if collection_metrics %}{% if collection_metrics.total_collection_count and collection_metrics.total_collection_count > 0 %}{{ collection_metrics.total_collection_count|intcomma }}{% else %}{% with fresh=collection_metrics.fresh_collection_count|default:0 reloan=collection_metrics.reloan_collection_count|default:0 %}{% if fresh or reloan %}{{ fresh|add:reloan|intcomma }}{% else %}0{% endif %}{% endwith %}{% endif %}{% else %}0{% endif %} count</div>
                 </div>
                 
                 <!-- Fresh -->
@@ -284,7 +284,7 @@
                 </div>
                 
                 <!-- Prepayment -->
-                <div class="flex flex-col gap-1 lg:pl-8 relative">
+                <button onclick="openPrepaymentRecordsTable()" class="flex flex-col gap-1 lg:pl-8 relative p-3 rounded-lg border-2 border-transparent hover:border-yellow-300 dark:hover:border-yellow-600 transition-all duration-200 hover:shadow-md active:scale-95 text-left cursor-pointer">
                     <!-- Separator - Same style as KPI card left border -->
                     <div class="hidden lg:block absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
                     <div class="flex items-center gap-2 mb-1">
@@ -293,27 +293,31 @@
                     </div>
                     <div class="text-gray-900 dark:text-white font-bold text-sm" data-kpi="collection_prepayment_amount">{% if collection_metrics %}{% if collection_metrics.prepayment_amount %}₹{{ collection_metrics.prepayment_amount|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</div>
                     <div class="text-gray-500 dark:text-slate-400 text-xs" data-kpi="collection_prepayment_count">{% if collection_metrics %}{% if collection_metrics.prepayment_count %}{{ collection_metrics.prepayment_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</div>
-                </div>
+                </button>
                 
                 <!-- On Time -->
-                <div class="flex flex-col gap-1">
+                <button onclick="openOnTimeRecordsTable()" class="flex flex-col gap-1 lg:pl-8 relative p-3 rounded-lg border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200 hover:shadow-md active:scale-95 text-left cursor-pointer">
+                    <!-- Separator - Same style as KPI card left border -->
+                    <div class="hidden lg:block absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
                     <div class="flex items-center gap-2 mb-1">
                         <span class="w-2 h-2 rounded-full bg-blue-500"></span>
                         <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">On Time</span>
                     </div>
                     <div class="text-gray-900 dark:text-white font-bold text-sm" data-kpi="collection_on_time">{% if collection_metrics %}{% if collection_metrics.due_date_amount %}₹{{ collection_metrics.due_date_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.on_time_collection %}₹{{ collection_metrics.on_time_collection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.onTimeCollection %}₹{{ collection_metrics.onTimeCollection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.on_time %}₹{{ collection_metrics.on_time|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.on_time_amount %}₹{{ collection_metrics.on_time_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.onTime %}₹{{ collection_metrics.onTime|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</div>
                     <div class="text-gray-500 dark:text-slate-400 text-xs" data-kpi="collection_due_date_count">{% if collection_metrics %}{% if collection_metrics.due_date_count %}{{ collection_metrics.due_date_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</div>
-                </div>
+                </button>
                 
                 <!-- Overdue -->
-                <div class="flex flex-col gap-1">
+                <button onclick="openOverdueRecordsTable()" class="flex flex-col gap-1 lg:pl-8 relative p-3 rounded-lg border-2 border-transparent hover:border-red-300 dark:hover:border-red-600 transition-all duration-200 hover:shadow-md active:scale-95 text-left cursor-pointer">
+                    <!-- Separator - Same style as KPI card left border -->
+                    <div class="hidden lg:block absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
                     <div class="flex items-center gap-2 mb-1">
                         <span class="w-2 h-2 rounded-full bg-red-500"></span>
                         <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Overdue</span>
                     </div>
                     <div class="text-gray-900 dark:text-white font-bold text-sm" data-kpi="collection_overdue">{% if collection_metrics %}{% if collection_metrics.overdue_amount %}₹{{ collection_metrics.overdue_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overdue_collection %}₹{{ collection_metrics.overdue_collection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overdueCollection %}₹{{ collection_metrics.overdueCollection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overdue %}₹{{ collection_metrics.overdue|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overDue %}₹{{ collection_metrics.overDue|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</div>
                     <div class="text-gray-500 dark:text-slate-400 text-xs" data-kpi="collection_overdue_count">{% if collection_metrics %}{% if collection_metrics.overdue_count %}{{ collection_metrics.overdue_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</div>
-                </div>
+                </button>
             </div>
         </div>
     </div>
