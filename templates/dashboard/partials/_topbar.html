@@ -95,7 +95,19 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                     <span class="text-xs text-white/70 font-medium">Welcome,</span>
-                    <span class="text-xs text-white font-semibold">{% if user %}{{ user.username|default:"admin" }}{% else %}admin{% endif %}</span>
+                    <span class="text-xs text-white font-semibold">
+                        {% if user %}
+                            {% if user.first_name or user.last_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% elif request.session.employee_f_name or request.session.employee_l_name %}
+                                {{ request.session.employee_f_name }} {{ request.session.employee_l_name }}
+                            {% else %}
+                                {{ user.username|default:"admin" }}
+                            {% endif %}
+                        {% else %}
+                            admin
+                        {% endif %}
+                    </span>
                 </div>
                 <form method="post" action="{% url 'logout' %}" class="inline">
                     {% csrf_token %}

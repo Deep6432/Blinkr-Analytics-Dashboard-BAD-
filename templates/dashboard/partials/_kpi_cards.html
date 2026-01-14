@@ -237,7 +237,7 @@
         <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
         <div class="relative flex items-start justify-between mb-6">
             <div class="flex-1">
-                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Collection Metrics</p>
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Collection Amount As Of Date Range</p>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">
                     <span data-kpi="collection_total">{% if collection_metrics %}{% if collection_metrics.total_collection_amount %}₹{{ collection_metrics.total_collection_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.totalCollectionAmount %}₹{{ collection_metrics.totalCollectionAmount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.total_amount %}₹{{ collection_metrics.total_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.collection_amount %}₹{{ collection_metrics.collection_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.total %}₹{{ collection_metrics.total|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</span>
                 </p>

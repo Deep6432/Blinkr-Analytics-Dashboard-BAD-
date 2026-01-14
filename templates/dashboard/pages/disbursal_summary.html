@@ -8,29 +8,29 @@
 
 {% block content %}
 <!-- Charts Section -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
     <!-- Disbursal by State Chart -->
     <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
         <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
         <div class="flex items-center justify-between mb-5">
-            <div>
+            <div class="flex-1 text-center">
                 <h3 class="text-lg font-bold mb-1.5 tracking-tight" style="color: #00072D;">Disbursal by State</h3>
                 <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Distribution across states</p>
             </div>
             <div class="flex items-center gap-2">
                 <button 
-                    onclick="downloadChart('stateChart')"
+                    onclick="openFullscreenChart('stateChart')"
                     class="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
                     style="background-color: rgba(0, 7, 45, 0.1); color: #00072D;"
-                    aria-label="Download chart"
+                    aria-label="View fullscreen"
                 >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                     </svg>
                 </button>
             </div>
         </div>
-        <div class="relative h-80">
+        <div class="relative h-64">
             <canvas id="stateChart"></canvas>
         </div>
         <!-- Scrollable Legend -->
@@ -43,24 +43,24 @@
     <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
         <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
         <div class="flex items-center justify-between mb-5">
-            <div>
+            <div class="flex-1 text-center">
                 <h3 class="text-lg font-bold mb-1.5 tracking-tight" style="color: #00072D;">Disbursal by City</h3>
                 <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Distribution across cities</p>
             </div>
             <div class="flex items-center gap-2">
                 <button 
-                    onclick="downloadChart('cityChart')"
+                    onclick="openFullscreenChart('cityChart')"
                     class="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
                     style="background-color: rgba(0, 7, 45, 0.1); color: #00072D;"
-                    aria-label="Download chart"
+                    aria-label="View fullscreen"
                 >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                     </svg>
                 </button>
             </div>
         </div>
-        <div class="relative h-80">
+        <div class="relative h-64">
             <canvas id="cityChart"></canvas>
         </div>
         <!-- Scrollable Legend -->
@@ -68,9 +68,39 @@
             <!-- Legend will be populated by Chart.js -->
         </div>
     </div>
+    
+    <!-- Disbursal by Lead Source Chart -->
+    <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex-1 text-center">
+                <h3 class="text-lg font-bold mb-1.5 tracking-tight" style="color: #00072D;">Lead Source</h3>
+                <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Distribution by source</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button 
+                    onclick="openFullscreenChart('sourceChart')"
+                    class="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
+                    style="background-color: rgba(0, 7, 45, 0.1); color: #00072D;"
+                    aria-label="View fullscreen"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="relative h-64">
+            <canvas id="sourceChart"></canvas>
+        </div>
+        <!-- Scrollable Legend -->
+        <div id="sourceLegend" class="mt-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+            <!-- Legend will be populated by Chart.js -->
+        </div>
+    </div>
 </div>
 
-<!-- Empty State (if no data) - Show only if both charts have no data -->
+<!-- Empty State (if no data) - Show only if all charts have no data -->
 <div id="empty-state" class="hidden bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl p-12 text-center shadow-sm">
     <svg class="w-16 h-16 text-gray-400 dark:text-slate-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -94,13 +124,22 @@ window.citiesByState = {};
 window.stateData = {
     labels: {{ state_labels|safe|default:"[]" }},
     values: {{ state_values|safe|default:"[]" }},
-    sanction: {{ state_sanction|safe|default:"[]" }}
+    sanction: {{ state_sanction|safe|default:"[]" }},
+    counts: {{ state_counts|safe|default:"[]" }}
 };
 
 window.cityData = {
     labels: {{ city_labels|safe|default:"[]" }},
     values: {{ city_values|safe|default:"[]" }},
-    sanction: {{ city_sanction|safe|default:"[]" }}
+    sanction: {{ city_sanction|safe|default:"[]" }},
+    counts: {{ city_counts|safe|default:"[]" }}
+};
+
+window.sourceData = {
+    labels: {{ source_labels|safe|default:"[]" }},
+    values: {{ source_values|safe|default:"[]" }},
+    sanction: {{ source_sanction|safe|default:"[]" }},
+    counts: {{ source_counts|safe|default:"[]" }}
 };
 
 // Chart.js color palette (premium, accessible)
@@ -159,12 +198,18 @@ window.initializeCharts = function() {
         window.cityChart.destroy();
         window.cityChart = null;
     }
+    if (window.sourceChart) {
+        window.sourceChart.destroy();
+        window.sourceChart = null;
+    }
     
     // Clear legends
     const stateLegendEl = document.getElementById('stateLegend');
     const cityLegendEl = document.getElementById('cityLegend');
+    const sourceLegendEl = document.getElementById('sourceLegend');
     if (stateLegendEl) stateLegendEl.innerHTML = '';
     if (cityLegendEl) cityLegendEl.innerHTML = '';
+    if (sourceLegendEl) sourceLegendEl.innerHTML = '';
     
     // Initialize State Chart
     if (window.stateData && window.stateData.labels.length > 0 && window.stateData.values.length > 0) {
@@ -205,16 +250,20 @@ window.initializeCharts = function() {
                                     const index = context.dataIndex;
                                     const disbursalValue = context.parsed || 0;
                                     const sanctionValue = window.stateData.sanction[index] || 0;
+                                    const countValue = window.stateData.counts[index] || 0;
                                     
                                     // Calculate totals for percentages
                                     const totalDisbursal = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const totalSanction = window.stateData.sanction.reduce((a, b) => a + b, 0);
+                                    const totalCount = window.stateData.counts.reduce((a, b) => a + b, 0);
                                     
                                     // Calculate percentages
                                     const disbursalPercentage = totalDisbursal > 0 ? ((disbursalValue / totalDisbursal) * 100).toFixed(1) : '0.0';
                                     const sanctionPercentage = totalSanction > 0 ? ((sanctionValue / totalSanction) * 100).toFixed(1) : '0.0';
+                                    const countPercentage = totalCount > 0 ? ((countValue / totalCount) * 100).toFixed(1) : '0.0';
                                     
                                     return [
+                                        `Count: ${countValue.toLocaleString('en-IN')} (${countPercentage}%)`,
                                         `Sanction Amount: ₹${sanctionValue.toLocaleString('en-IN')} (${sanctionPercentage}%)`,
                                         `Disbursal Amount: ₹${disbursalValue.toLocaleString('en-IN')} (${disbursalPercentage}%)`
                                     ];
@@ -225,9 +274,9 @@ window.initializeCharts = function() {
                 }
             });
             
-            // Custom legend for state chart (show sanction amount)
+            // Custom legend for state chart (show sanction amount and count)
             if (typeof window.renderCustomLegend === 'function') {
-                window.renderCustomLegend('stateLegend', window.stateData.labels, window.stateData.values, window.chartColors, window.stateData.sanction);
+                window.renderCustomLegend('stateLegend', window.stateData.labels, window.stateData.values, window.chartColors, window.stateData.sanction, window.stateData.counts);
             }
         }
     } else {
@@ -273,16 +322,20 @@ window.initializeCharts = function() {
                                     const index = context.dataIndex;
                                     const disbursalValue = context.parsed || 0;
                                     const sanctionValue = window.cityData.sanction[index] || 0;
+                                    const countValue = window.cityData.counts[index] || 0;
                                     
                                     // Calculate totals for percentages
                                     const totalDisbursal = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const totalSanction = window.cityData.sanction.reduce((a, b) => a + b, 0);
+                                    const totalCount = window.cityData.counts.reduce((a, b) => a + b, 0);
                                     
                                     // Calculate percentages
                                     const disbursalPercentage = totalDisbursal > 0 ? ((disbursalValue / totalDisbursal) * 100).toFixed(1) : '0.0';
                                     const sanctionPercentage = totalSanction > 0 ? ((sanctionValue / totalSanction) * 100).toFixed(1) : '0.0';
+                                    const countPercentage = totalCount > 0 ? ((countValue / totalCount) * 100).toFixed(1) : '0.0';
                                     
                                     return [
+                                        `Count: ${countValue.toLocaleString('en-IN')} (${countPercentage}%)`,
                                         `Sanction Amount: ₹${sanctionValue.toLocaleString('en-IN')} (${sanctionPercentage}%)`,
                                         `Disbursal Amount: ₹${disbursalValue.toLocaleString('en-IN')} (${disbursalPercentage}%)`
                                     ];
@@ -293,28 +346,102 @@ window.initializeCharts = function() {
                 }
             });
             
-            // Custom legend for city chart (show sanction amount)
+            // Custom legend for city chart (show sanction amount and count)
             if (typeof window.renderCustomLegend === 'function') {
-                window.renderCustomLegend('cityLegend', window.cityData.labels, window.cityData.values, window.chartColors, window.cityData.sanction);
+                window.renderCustomLegend('cityLegend', window.cityData.labels, window.cityData.values, window.chartColors, window.cityData.sanction, window.cityData.counts);
             }
         }
     } else {
         window.cityChart = null;
+    }
+    
+    // Initialize Source Chart
+    if (window.sourceData && window.sourceData.labels.length > 0 && window.sourceData.values.length > 0) {
+        const sourceCtx = document.getElementById('sourceChart');
+        if (sourceCtx) {
+            const tooltipColors = getTooltipColors();
+            window.sourceChart = new Chart(sourceCtx, {
+                type: 'pie',
+                data: {
+                    labels: window.sourceData.labels,
+                    datasets: [{
+                        data: window.sourceData.values,
+                        backgroundColor: window.chartColors.slice(0, window.sourceData.labels.length),
+                        borderColor: getCurrentTheme() === 'dark' ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                        borderWidth: 2,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false // We'll use custom legend
+                        },
+                        tooltip: {
+                            backgroundColor: tooltipColors.backgroundColor,
+                            titleColor: tooltipColors.titleColor,
+                            bodyColor: tooltipColors.bodyColor,
+                            borderColor: tooltipColors.borderColor,
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label || '';
+                                },
+                                label: function(context) {
+                                    const index = context.dataIndex;
+                                    const disbursalValue = context.parsed || 0;
+                                    const sanctionValue = window.sourceData.sanction[index] || 0;
+                                    const countValue = window.sourceData.counts[index] || 0;
+                                    
+                                    // Calculate totals for percentages
+                                    const totalDisbursal = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const totalSanction = window.sourceData.sanction.reduce((a, b) => a + b, 0);
+                                    const totalCount = window.sourceData.counts.reduce((a, b) => a + b, 0);
+                                    
+                                    // Calculate percentages
+                                    const disbursalPercentage = totalDisbursal > 0 ? ((disbursalValue / totalDisbursal) * 100).toFixed(1) : '0.0';
+                                    const sanctionPercentage = totalSanction > 0 ? ((sanctionValue / totalSanction) * 100).toFixed(1) : '0.0';
+                                    const countPercentage = totalCount > 0 ? ((countValue / totalCount) * 100).toFixed(1) : '0.0';
+                                    
+                                    return [
+                                        `Count: ${countValue.toLocaleString('en-IN')} (${countPercentage}%)`,
+                                        `Sanction Amount: ₹${sanctionValue.toLocaleString('en-IN')} (${sanctionPercentage}%)`,
+                                        `Disbursal Amount: ₹${disbursalValue.toLocaleString('en-IN')} (${disbursalPercentage}%)`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Custom legend for source chart (show sanction amount and count)
+            if (typeof window.renderCustomLegend === 'function') {
+                window.renderCustomLegend('sourceLegend', window.sourceData.labels, window.sourceData.values, window.chartColors, window.sourceData.sanction, window.sourceData.counts);
+            }
+        }
+    } else {
+        window.sourceChart = null;
     }
 };
 
 // Initialize charts when page loads - make them global
 window.stateChart = null;
 window.cityChart = null;
+window.sourceChart = null;
 
 // Function to show/hide empty state
 function updateEmptyState() {
     const emptyStateEl = document.getElementById('empty-state');
     const hasStateData = window.stateData && window.stateData.labels.length > 0 && window.stateData.values.length > 0;
     const hasCityData = window.cityData && window.cityData.labels.length > 0 && window.cityData.values.length > 0;
+    const hasSourceData = window.sourceData && window.sourceData.labels.length > 0 && window.sourceData.values.length > 0;
     
     if (emptyStateEl) {
-        if (!hasStateData && !hasCityData) {
+        if (!hasStateData && !hasCityData && !hasSourceData) {
             emptyStateEl.classList.remove('hidden');
         } else {
             emptyStateEl.classList.add('hidden');
@@ -334,18 +461,21 @@ if (document.readyState === 'loading') {
 }
 
 // Render custom scrollable legend - make it global
-window.renderCustomLegend = function(containerId, labels, values, colors, sanctionValues) {
+window.renderCustomLegend = function(containerId, labels, values, colors, sanctionValues, countValues) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
     // Use sanction values if provided, otherwise use disbursal values
     const displayValues = sanctionValues || values;
     const total = displayValues.reduce((a, b) => a + b, 0);
+    const totalCount = countValues ? countValues.reduce((a, b) => a + b, 0) : 0;
     container.innerHTML = '';
     
     labels.forEach((label, index) => {
         const sanctionValue = displayValues[index] || 0;
+        const countValue = countValues ? (countValues[index] || 0) : 0;
         const percentage = total > 0 ? ((sanctionValue / total) * 100).toFixed(1) : '0.0';
+        const countPercentage = totalCount > 0 ? ((countValue / totalCount) * 100).toFixed(1) : '0.0';
         const color = colors[index % colors.length];
         
         const legendItem = document.createElement('div');
@@ -353,7 +483,10 @@ window.renderCustomLegend = function(containerId, labels, values, colors, sancti
         legendItem.innerHTML = `
             <div class="flex items-center gap-3">
                 <div class="w-4 h-4 rounded" style="background-color: ${color}"></div>
-                <span class="text-sm text-gray-700 dark:text-slate-300">${label}</span>
+                <div class="flex flex-col">
+                    <span class="text-sm text-gray-700 dark:text-slate-300">${label}</span>
+                    ${countValues ? `<span class="text-xs text-gray-500 dark:text-slate-500">Count: ${countValue.toLocaleString('en-IN')} (${countPercentage}%)</span>` : ''}
+                </div>
             </div>
             <div class="flex items-center gap-3">
                 <span class="text-sm font-medium text-gray-900 dark:text-slate-200">₹${sanctionValue.toLocaleString('en-IN')}</span>
@@ -364,17 +497,278 @@ window.renderCustomLegend = function(containerId, labels, values, colors, sancti
     });
 };
 
-// Download chart as PNG
-function downloadChart(chartId) {
-    const chart = chartId === 'stateChart' ? window.stateChart : window.cityChart;
-    if (chart) {
-        const url = chart.toBase64Image();
+// Fullscreen chart modal
+function openFullscreenChart(chartId) {
+    let chart = null;
+    let chartTitle = '';
+    let chartData = null;
+    
+    if (chartId === 'stateChart') {
+        chart = window.stateChart;
+        chartTitle = 'Disbursal by State';
+        chartData = window.stateData;
+    } else if (chartId === 'cityChart') {
+        chart = window.cityChart;
+        chartTitle = 'Disbursal by City';
+        chartData = window.cityData;
+    } else if (chartId === 'sourceChart') {
+        chart = window.sourceChart;
+        chartTitle = 'Lead Source';
+        chartData = window.sourceData;
+    }
+    
+    if (!chart) {
+        console.warn('Chart not found:', chartId);
+        return;
+    }
+    
+    // Create or get fullscreen modal
+    let modal = document.getElementById('fullscreen-chart-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'fullscreen-chart-modal';
+        modal.className = 'fixed inset-0 z-[100] hidden overflow-y-auto bg-black bg-opacity-75';
+        modal.innerHTML = `
+            <div class="flex items-center justify-center min-h-screen p-4" onclick="if(event.target === this) closeFullscreenChart()">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden relative" onclick="event.stopPropagation()">
+                    <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white" id="fullscreen-chart-title"></h3>
+                        <div class="flex items-center gap-3">
+                            <button 
+                                onclick="downloadFullscreenChart()"
+                                class="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
+                                style="background-color: rgba(0, 7, 45, 0.1); color: #00072D;"
+                                aria-label="Download chart"
+                                id="fullscreen-download-btn"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                            </button>
+                            <button 
+                                onclick="closeFullscreenChart()"
+                                class="p-2 rounded-lg transition-all duration-200 hover:opacity-80 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                aria-label="Close"
+                            >
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-6 overflow-auto max-h-[calc(90vh-120px)]">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Chart Section -->
+                            <div class="flex flex-col">
+                                <div class="relative flex-1" style="min-height: 500px;">
+                                    <canvas id="fullscreen-chart-canvas"></canvas>
+                                </div>
+                            </div>
+                            
+                            <!-- Data Table Section -->
+                            <div class="flex flex-col">
+                                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Detailed Breakdown</h4>
+                                <div id="fullscreen-chart-data-table" class="flex-1 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
+                                    <!-- Data table will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                        <div id="fullscreen-chart-legend" class="mt-6 max-h-48 overflow-y-auto pr-2 custom-scrollbar"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Set chart title
+    document.getElementById('fullscreen-chart-title').textContent = chartTitle;
+    
+    // Store current chart reference
+    window.currentFullscreenChart = chart;
+    window.currentFullscreenChartId = chartId;
+    window.currentFullscreenChartData = chartData;
+    
+    // Create new chart instance for fullscreen
+    const canvas = document.getElementById('fullscreen-chart-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing fullscreen chart if any
+    if (window.fullscreenChartInstance) {
+        window.fullscreenChartInstance.destroy();
+    }
+    
+    // Create fullscreen chart with same data
+    const tooltipColors = getTooltipColors();
+    window.fullscreenChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: chart.data.labels,
+            datasets: [{
+                data: chart.data.datasets[0].data,
+                backgroundColor: chart.data.datasets[0].backgroundColor,
+                borderColor: chart.data.datasets[0].borderColor,
+                borderWidth: chart.data.datasets[0].borderWidth,
+                hoverOffset: chart.data.datasets[0].hoverOffset
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: tooltipColors.backgroundColor,
+                    titleColor: tooltipColors.titleColor,
+                    bodyColor: tooltipColors.bodyColor,
+                    borderColor: tooltipColors.borderColor,
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: chart.options.plugins.tooltip.callbacks
+                }
+            }
+        }
+    });
+    
+    // Render legend
+    if (chartData && typeof window.renderCustomLegend === 'function') {
+        window.renderCustomLegend('fullscreen-chart-legend', 
+            chartData.labels, 
+            chartData.values, 
+            window.fullscreenChartInstance.data.datasets[0].backgroundColor,
+            chartData.sanction,
+            chartData.counts
+        );
+    }
+    
+    // Render data table with all tooltip information
+    renderFullscreenDataTable(chartData, window.fullscreenChartInstance.data.datasets[0].backgroundColor);
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+}
+
+// Function to render data table in fullscreen view
+function renderFullscreenDataTable(chartData, colors) {
+    const tableContainer = document.getElementById('fullscreen-chart-data-table');
+    if (!tableContainer || !chartData) return;
+    
+    const labels = chartData.labels || [];
+    const values = chartData.values || [];
+    const sanction = chartData.sanction || [];
+    const counts = chartData.counts || [];
+    
+    // Calculate totals
+    const totalDisbursal = values.reduce((a, b) => a + b, 0);
+    const totalSanction = sanction.reduce((a, b) => a + b, 0);
+    const totalCount = counts.reduce((a, b) => a + b, 0);
+    
+    // Create table HTML
+    let tableHTML = `
+        <div class="bg-gray-50 dark:bg-slate-700/50 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-600">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-600">
+                <thead class="bg-gray-100 dark:bg-slate-700">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider">Label</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider">Count</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider">Sanction</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider">Disbursal</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-600">
+    `;
+    
+    labels.forEach((label, index) => {
+        const disbursalValue = values[index] || 0;
+        const sanctionValue = sanction[index] || 0;
+        const countValue = counts[index] || 0;
+        const color = colors[index % colors.length];
+        
+        // Calculate percentages
+        const disbursalPercentage = totalDisbursal > 0 ? ((disbursalValue / totalDisbursal) * 100).toFixed(1) : '0.0';
+        const sanctionPercentage = totalSanction > 0 ? ((sanctionValue / totalSanction) * 100).toFixed(1) : '0.0';
+        const countPercentage = totalCount > 0 ? ((countValue / totalCount) * 100).toFixed(1) : '0.0';
+        
+        tableHTML += `
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded" style="background-color: ${color}"></div>
+                        <span class="text-sm font-medium text-gray-900 dark:text-slate-200">${label}</span>
+                    </div>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-right">
+                    <div class="text-sm text-gray-900 dark:text-slate-200">${countValue.toLocaleString('en-IN')}</div>
+                    <div class="text-xs text-gray-500 dark:text-slate-500">${countPercentage}%</div>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-right">
+                    <div class="text-sm font-medium text-gray-900 dark:text-slate-200">₹${sanctionValue.toLocaleString('en-IN')}</div>
+                    <div class="text-xs text-gray-500 dark:text-slate-500">${sanctionPercentage}%</div>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-right">
+                    <div class="text-sm font-medium text-gray-900 dark:text-slate-200">₹${disbursalValue.toLocaleString('en-IN')}</div>
+                    <div class="text-xs text-gray-500 dark:text-slate-500">${disbursalPercentage}%</div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    // Add totals row
+    tableHTML += `
+                </tbody>
+                <tfoot class="bg-gray-100 dark:bg-slate-700 font-semibold">
+                    <tr>
+                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-slate-200">Total</td>
+                        <td class="px-4 py-3 text-right text-sm text-gray-900 dark:text-slate-200">${totalCount.toLocaleString('en-IN')}</td>
+                        <td class="px-4 py-3 text-right text-sm text-gray-900 dark:text-slate-200">₹${totalSanction.toLocaleString('en-IN')}</td>
+                        <td class="px-4 py-3 text-right text-sm text-gray-900 dark:text-slate-200">₹${totalDisbursal.toLocaleString('en-IN')}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    `;
+    
+    tableContainer.innerHTML = tableHTML;
+}
+
+function closeFullscreenChart() {
+    const modal = document.getElementById('fullscreen-chart-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    
+    // Destroy fullscreen chart instance
+    if (window.fullscreenChartInstance) {
+        window.fullscreenChartInstance.destroy();
+        window.fullscreenChartInstance = null;
+    }
+}
+
+function downloadFullscreenChart() {
+    if (window.fullscreenChartInstance) {
+        const url = window.fullscreenChartInstance.toBase64Image();
         const link = document.createElement('a');
-        link.download = `${chartId}_${new Date().toISOString().split('T')[0]}.png`;
+        link.download = `${window.currentFullscreenChartId || 'chart'}_${new Date().toISOString().split('T')[0]}.png`;
         link.href = url;
         link.click();
     }
 }
+
+// Close fullscreen on Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const fullscreenModal = document.getElementById('fullscreen-chart-modal');
+        if (fullscreenModal && !fullscreenModal.classList.contains('hidden')) {
+            closeFullscreenChart();
+        }
+    }
+});
 </script>
 
 <!-- Records Table Modal -->
@@ -591,6 +985,7 @@ let allRecordsData = [];
 const columnMapping = [
         ['ID', ['id', 'ID', 'Id', 'loan_id', 'Loan_ID']],
         ['LOAN_NO', ['loan_no', 'Loan_No', 'LOAN_NO', 'loan_number', 'Loan_Number', 'loanNumber', 'loan_id', 'Loan_ID', 'loanId', 'loan_id_number', 'application_id', 'Application_ID', 'application_number', 'Application_Number', 'app_id', 'App_ID']],
+        ['SOURCE', ['source', 'Source', 'SOURCE', 'lead_source', 'Lead_Source', 'LEAD_SOURCE', 'source_name', 'Source_Name']],
         ['FULLNAME', ['fullname', 'FullName', 'full_name', 'FULLNAME', 'name', 'Name', 'customer_name']],
         ['PAN', ['pan', 'PAN', 'Pan', 'pan_number', 'PAN_Number']],
         ['MOBILE', ['mobile', 'Mobile', 'MOBILE', 'phone', 'Phone', 'mobile_number', 'contact_number']],
@@ -804,9 +1199,14 @@ function renderTableRecords(records) {
     // Store records for detail view (before building rows)
     window.currentDisplayedRecords = records;
     
-    // Build table rows with click handlers
+    // Build table rows with click handlers and alternating row colors
     tableBody.innerHTML = records.map((record, index) => {
-        return `<tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors border-b border-gray-200 dark:border-slate-700 cursor-pointer" onclick="showRecordDetails(${index})" title="Click to view details">
+        // Add alternating row colors (even rows: white/slate-800, odd rows: gray-50/slate-700)
+        const rowBgClass = index % 2 === 0 
+            ? 'bg-white dark:bg-slate-800' 
+            : 'bg-gray-50 dark:bg-slate-700/30';
+        
+        return `<tr class="${rowBgClass} hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors border-b border-gray-200 dark:border-slate-700 cursor-pointer" onclick="showRecordDetails(${index})" title="Click to view details">
             ${columnMapping.map(([displayName, fieldNames]) => {
                 const value = getFieldValue(record, fieldNames);
                 const displayValue = formatValue(value, displayName);

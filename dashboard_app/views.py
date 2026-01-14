@@ -88,11 +88,26 @@ def custom_login(request):
                     token = api_response.get('token')
                     employee_data = api_response.get('employee', {})
                     
+                    # Employee name mapping - map specific employee IDs to display names
+                    employee_id = employee_data.get('id')
+                    employee_name_mapping = {
+                        16: {'f_name': 'Deep', 'l_name': 'Durugkar'}
+                    }
+                    
+                    # Get mapped name if exists, otherwise use API data
+                    if employee_id in employee_name_mapping:
+                        mapped_name = employee_name_mapping[employee_id]
+                        f_name = mapped_name['f_name']
+                        l_name = mapped_name['l_name']
+                    else:
+                        f_name = employee_data.get('f_name', '')
+                        l_name = employee_data.get('l_name', '')
+                    
                     # Store token in session for future API calls
                     request.session['blinkr_token'] = token
-                    request.session['employee_id'] = employee_data.get('id')
-                    request.session['employee_f_name'] = employee_data.get('f_name', '')
-                    request.session['employee_l_name'] = employee_data.get('l_name', '')
+                    request.session['employee_id'] = employee_id
+                    request.session['employee_f_name'] = f_name
+                    request.session['employee_l_name'] = l_name
                     request.session['employee_roles'] = employee_data.get('roles', [])
                     
                     # Create or get Django user
@@ -100,16 +115,16 @@ def custom_login(request):
                     
                     # Use email as username, or employee ID if available
                     django_username = username
-                    if employee_data.get('id'):
-                        django_username = f"employee_{employee_data.get('id')}"
+                    if employee_id:
+                        django_username = f"employee_{employee_id}"
                     
                     # Try to get existing user or create one
                     user, created = User.objects.get_or_create(
                         username=django_username,
                         defaults={
                             'email': username,
-                            'first_name': employee_data.get('f_name', ''),
-                            'last_name': employee_data.get('l_name', ''),
+                            'first_name': f_name,
+                            'last_name': l_name,
                             'is_staff': False,
                             'is_superuser': False,
                         }
@@ -118,8 +133,8 @@ def custom_login(request):
                     # Update user info if it exists
                     if not created:
                         user.email = username
-                        user.first_name = employee_data.get('f_name', '')
-                        user.last_name = employee_data.get('l_name', '')
+                        user.first_name = f_name
+                        user.last_name = l_name
                         user.save()
                     
                     # Set password for Django authentication
@@ -394,10 +409,11 @@ def disbursal_summary(request):
     reloan_tenure_sum = 0
     reloan_tenure_count = 0
     
-    # Aggregate data by state and city
-    # Using dictionaries to store multiple values per state/city
-    state_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0})
-    city_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0})
+    # Aggregate data by state, city, and source
+    # Using dictionaries to store multiple values per state/city/source (including count)
+    state_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
+    city_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
+    source_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
     
     # Get unique states for filter dropdowns
     all_states = set()
@@ -460,36 +476,55 @@ def disbursal_summary(request):
             fresh_interest_amount += int_amt
             fresh_repayment_amount += repay_amt
         
-        # Aggregate by state and city for charts
+        # Aggregate by state, city, and source for charts
         state = record.get('state', '').strip()
         city = record.get('city', '').strip()
+        source = record.get('source', record.get('Source', '')).strip()  # Try both lowercase and capitalized
         
-        # State chart: Aggregate sanction, disbursal, and net disbursal amounts
+        # State chart: Aggregate sanction, disbursal, net disbursal amounts, and count
         if state:
             state_data[state]['disbursal'] += disbursal_amt
             state_data[state]['sanction'] += loan_amt
             state_data[state]['net_disbursal'] += net_disbursal_amt
+            state_data[state]['count'] += 1
         
-        # City chart: Aggregate sanction, disbursal, and net disbursal amounts
+        # City chart: Aggregate sanction, disbursal, net disbursal amounts, and count
         if city:
             city_data[city]['disbursal'] += disbursal_amt
             city_data[city]['sanction'] += loan_amt
             city_data[city]['net_disbursal'] += net_disbursal_amt
+            city_data[city]['count'] += 1
+        
+        # Source chart: Aggregate sanction, disbursal, net disbursal amounts, and count
+        if source:
+            source_data[source]['disbursal'] += disbursal_amt
+            source_data[source]['sanction'] += loan_amt
+            source_data[source]['net_disbursal'] += net_disbursal_amt
+            source_data[source]['count'] += 1
     
-    # Sort state and city data by disbursal amount (descending) and take top 20
+    # Sort state, city, and source data by disbursal amount (descending) and take top 20
     sorted_states = sorted(state_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
     sorted_cities = sorted(city_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
+    sorted_sources = sorted(source_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
     
     # Prepare chart data - use disbursal amount for chart size, but include all data for tooltips
     state_labels = [item[0] for item in sorted_states]
     state_values = [item[1]['disbursal'] for item in sorted_states]
     state_sanction = [item[1]['sanction'] for item in sorted_states]
     state_net_disbursal = [item[1]['net_disbursal'] for item in sorted_states]
+    state_counts = [item[1]['count'] for item in sorted_states]
     
     city_labels = [item[0] for item in sorted_cities]
     city_values = [item[1]['disbursal'] for item in sorted_cities]
     city_sanction = [item[1]['sanction'] for item in sorted_cities]
     city_net_disbursal = [item[1]['net_disbursal'] for item in sorted_cities]
+    city_counts = [item[1]['count'] for item in sorted_cities]
+    
+    source_labels = [item[0] for item in sorted_sources]
+    source_values = [item[1]['disbursal'] for item in sorted_sources]
+    source_sanction = [item[1]['sanction'] for item in sorted_sources]
+    source_net_disbursal = [item[1]['net_disbursal'] for item in sorted_sources]
+    source_counts = [item[1]['count'] for item in sorted_sources]
     
     # Filter cities dropdown: show only cities from selected states
     if state_filters:
@@ -503,6 +538,128 @@ def disbursal_summary(request):
     
     # Fetch Collection Metrics from API - USING SAME DATE RANGE AS DISBURSAL FILTERS
     collection_metrics = {}
+    
+    # Helper function to aggregate multiple rows of collection metrics
+    def aggregate_collection_metrics(rows):
+        """Aggregate collection metrics from multiple rows into a single dict"""
+        if not rows or len(rows) == 0:
+            return {}
+        
+        # Initialize aggregated dict with standard field names
+        aggregated = {
+            'total_collection_amount': 0,
+            'fresh_collection_amount': 0,
+            'reloan_collection_amount': 0,
+            'prepayment_amount': 0,
+            'due_date_amount': 0,
+            'overdue_amount': 0,
+            'total_collection_count': 0,
+            'fresh_collection_count': 0,
+            'reloan_collection_count': 0,
+            'prepayment_count': 0,
+            'due_date_count': 0,
+            'overdue_count': 0
+        }
+        
+        # Field name mappings - map various API field names to our standard names
+        field_mappings = {
+            # Amount fields
+            'total_collection_amount': ['total_collection_amount', 'totalCollectionAmount', 'total_amount', 'collection_amount', 'total'],
+            'fresh_collection_amount': ['fresh_collection_amount', 'freshCollectionAmount', 'fresh_amount', 'fresh'],
+            'reloan_collection_amount': ['reloan_collection_amount', 'reloanCollectionAmount', 'reloan_amount', 'reloan'],
+            'prepayment_amount': ['prepayment_amount', 'prepaymentAmount', 'prepayment'],
+            'due_date_amount': ['due_date_amount', 'dueDateAmount', 'on_time_collection', 'onTimeCollection', 'on_time_amount', 'onTimeAmount', 'ontime_amount', 'ontimeAmount', 'onTime_amount', 'on_time_collection_amount', 'onTimeCollectionAmount', 'due_date_collection', 'dueDateCollection', 'on_time_amount_collection', 'onTimeAmountCollection'],
+            'overdue_amount': ['overdue_amount', 'overdueAmount', 'overdue_collection', 'overdueCollection', 'overdue_collection_amount', 'overdueCollectionAmount'],
+            # Count fields
+            'total_collection_count': ['total_collection_count', 'totalCollectionCount', 'total_count', 'totalCount', 'total'],
+            'fresh_collection_count': ['fresh_collection_count', 'freshCollectionCount', 'fresh_count', 'freshCount', 'fresh'],
+            'reloan_collection_count': ['reloan_collection_count', 'reloanCollectionCount', 'reloan_count', 'reloanCount', 'reloan'],
+            'prepayment_count': ['prepayment_count', 'prepaymentCount', 'prepayment'],
+            'due_date_count': ['due_date_count', 'dueDateCount', 'on_time_count', 'onTimeCount', 'onTime', 'ontime', 'ontime_count', 'onTime_count', 'on_time_collection_count', 'onTimeCollectionCount', 'due_date_collection_count', 'dueDateCollectionCount'],
+            'overdue_count': ['overdue_count', 'overdueCount', 'overdue']
+        }
+        
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            
+            # Create case-insensitive lookup
+            row_keys_lower = {k.lower(): k for k in row.keys()}
+            
+            # For each standard field, try to find it in the row using all possible variations
+            # Process overdue fields FIRST to avoid conflicts with on_time fields
+            field_order = ['overdue_amount', 'overdue_count', 'due_date_amount', 'due_date_count', 
+                          'total_collection_amount', 'fresh_collection_amount', 'reloan_collection_amount', 
+                          'prepayment_amount', 'total_collection_count', 'fresh_collection_count', 
+                          'reloan_collection_count', 'prepayment_count']
+            
+            # Process fields in specific order
+            for standard_field in field_order:
+                if standard_field not in field_mappings:
+                    continue
+                variations = field_mappings[standard_field]
+                found = False
+                for variation in variations:
+                    # Try exact match first
+                    if variation in row:
+                        value = row[variation]
+                        if value is not None and value != '':
+                            try:
+                                if 'count' in standard_field:
+                                    aggregated[standard_field] += int(float(value))
+                                else:
+                                    aggregated[standard_field] += float(value)
+                                found = True
+                                break  # Found it, move to next field
+                            except (ValueError, TypeError):
+                                pass
+                    # Try case-insensitive match
+                    elif variation.lower() in row_keys_lower:
+                        actual_key = row_keys_lower[variation.lower()]
+                        value = row[actual_key]
+                        # For overdue fields, make sure the key doesn't contain on_time/due_date
+                        if 'overdue' in standard_field:
+                            if 'on_time' in actual_key.lower() or 'ontime' in actual_key.lower() or 'due_date' in actual_key.lower() or 'duedate' in actual_key.lower():
+                                continue  # Skip this match, it's not an overdue field
+                        # For due_date fields, make sure the key doesn't contain overdue
+                        elif 'due_date' in standard_field:
+                            if 'overdue' in actual_key.lower():
+                                continue  # Skip this match, it's not an on_time field
+                        
+                        if value is not None and value != '':
+                            try:
+                                if 'count' in standard_field:
+                                    aggregated[standard_field] += int(float(value))
+                                else:
+                                    aggregated[standard_field] += float(value)
+                                found = True
+                                break  # Found it, move to next field
+                            except (ValueError, TypeError):
+                                pass
+                
+                # If not found with variations, try partial matching for "on_time" or "ontime" in any key
+                # BUT ONLY for due_date fields, and make sure we exclude overdue fields
+                if not found and 'due_date' in standard_field:
+                    for key, value in row.items():
+                        key_lower = key.lower()
+                        # Check if key contains "on_time", "ontime", "due_date", or "duedate"
+                        # BUT EXCLUDE any keys that contain "overdue" to avoid mixing them up
+                        if (('on_time' in key_lower or 'ontime' in key_lower or 'due_date' in key_lower or 'duedate' in key_lower) 
+                            and 'overdue' not in key_lower and value is not None and value != ''):
+                            try:
+                                if 'count' in standard_field and ('count' in key_lower or 'number' in key_lower):
+                                    aggregated[standard_field] += int(float(value))
+                                    found = True
+                                    break
+                                elif 'amount' in standard_field and ('amount' in key_lower or 'amt' in key_lower or 'value' in key_lower):
+                                    aggregated[standard_field] += float(value)
+                                    found = True
+                                    break
+                            except (ValueError, TypeError):
+                                pass
+        
+        return aggregated
+    
     try:
         collection_api_url = 'https://backend.blinkrloan.com/insights/v2/collection_metrics'
         # Use the SAME date_from and date_to from filters (same as disbursal API)
@@ -547,7 +704,9 @@ def disbursal_summary(request):
                     if 'data' in collection_data and not collection_metrics:
                         data_value = collection_data['data']
                         if isinstance(data_value, list) and len(data_value) > 0:
-                            collection_metrics = data_value[0] if isinstance(data_value[0], dict) else {}
+                            # Aggregate all rows instead of just taking the first
+                            print(f"[Collection Metrics] Found {len(data_value)} rows in 'data', aggregating all...")
+                            collection_metrics = aggregate_collection_metrics(data_value)
                         elif isinstance(data_value, dict):
                             collection_metrics = data_value
                         else:
@@ -555,15 +714,25 @@ def disbursal_summary(request):
                     elif 'result' in collection_data and not collection_metrics:
                         result_value = collection_data['result']
                         if isinstance(result_value, list) and len(result_value) > 0:
-                            collection_metrics = result_value[0] if isinstance(result_value[0], dict) else {}
+                            # Aggregate all rows instead of just taking the first
+                            print(f"[Collection Metrics] Found {len(result_value)} rows in 'result', aggregating all...")
+                            collection_metrics = aggregate_collection_metrics(result_value)
                         else:
                             collection_metrics = result_value if isinstance(result_value, dict) else {}
                     elif 'metrics' in collection_data and not collection_metrics:
-                        collection_metrics = collection_data['metrics']
+                        metrics_value = collection_data['metrics']
+                        if isinstance(metrics_value, list) and len(metrics_value) > 0:
+                            # Aggregate all rows instead of just taking the first
+                            print(f"[Collection Metrics] Found {len(metrics_value)} rows in 'metrics', aggregating all...")
+                            collection_metrics = aggregate_collection_metrics(metrics_value)
+                        else:
+                            collection_metrics = metrics_value if isinstance(metrics_value, dict) else {}
                     elif not collection_metrics:
                         collection_metrics = collection_data
                 elif isinstance(collection_data, list) and len(collection_data) > 0:
-                    collection_metrics = collection_data[0] if isinstance(collection_data[0], dict) else {}
+                    # Aggregate all rows instead of just taking the first
+                    print(f"[Collection Metrics] Found {len(collection_data)} rows in list, aggregating all...")
+                    collection_metrics = aggregate_collection_metrics(collection_data)
                 else:
                     collection_metrics = {}
             except Exception as e:
@@ -623,12 +792,21 @@ def disbursal_summary(request):
         'state_values': json.dumps(state_values),
         'state_sanction': json.dumps(state_sanction),
         'state_net_disbursal': json.dumps(state_net_disbursal),
+        'state_counts': json.dumps(state_counts),
         
         # Chart Data - City Distribution
         'city_labels': json.dumps(city_labels),
         'city_values': json.dumps(city_values),
         'city_sanction': json.dumps(city_sanction),
         'city_net_disbursal': json.dumps(city_net_disbursal),
+        'city_counts': json.dumps(city_counts),
+        
+        # Chart Data - Lead Source Distribution
+        'source_labels': json.dumps(source_labels),
+        'source_values': json.dumps(source_values),
+        'source_sanction': json.dumps(source_sanction),
+        'source_net_disbursal': json.dumps(source_net_disbursal),
+        'source_counts': json.dumps(source_counts),
         
         # Filter Options
         'states': sorted(all_states),
@@ -793,8 +971,9 @@ def disbursal_data_api(request):
         reloan_tenure_sum = 0
         reloan_tenure_count = 0
         
-        state_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0})
-        city_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0})
+        state_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
+        city_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
+        source_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
         
         for record in records:
             is_reloan = record.get('is_reloan_case', False)
@@ -842,33 +1021,192 @@ def disbursal_data_api(request):
             
             state = record.get('state', '').strip()
             city = record.get('city', '').strip()
+            source = record.get('source', record.get('Source', '')).strip()  # Try both lowercase and capitalized
             
             if state:
                 state_data[state]['disbursal'] += disbursal_amt
                 state_data[state]['sanction'] += loan_amt
                 state_data[state]['net_disbursal'] += disbursal_amt
+                state_data[state]['count'] += 1
             
             if city:
                 city_data[city]['disbursal'] += disbursal_amt
                 city_data[city]['sanction'] += loan_amt
                 city_data[city]['net_disbursal'] += disbursal_amt
+                city_data[city]['count'] += 1
+            
+            if source:
+                source_data[source]['disbursal'] += disbursal_amt
+                source_data[source]['sanction'] += loan_amt
+                source_data[source]['net_disbursal'] += disbursal_amt
+                source_data[source]['count'] += 1
         
         # Sort and prepare chart data
         sorted_states = sorted(state_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
         sorted_cities = sorted(city_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
+        sorted_sources = sorted(source_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
         
         state_labels = [item[0] for item in sorted_states]
         state_values = [item[1]['disbursal'] for item in sorted_states]
         state_sanction = [item[1]['sanction'] for item in sorted_states]
+        state_counts = [item[1]['count'] for item in sorted_states]
         
         city_labels = [item[0] for item in sorted_cities]
         city_values = [item[1]['disbursal'] for item in sorted_cities]
         city_sanction = [item[1]['sanction'] for item in sorted_cities]
+        city_counts = [item[1]['count'] for item in sorted_cities]
+        
+        source_labels = [item[0] for item in sorted_sources]
+        source_values = [item[1]['disbursal'] for item in sorted_sources]
+        source_sanction = [item[1]['sanction'] for item in sorted_sources]
+        source_counts = [item[1]['count'] for item in sorted_sources]
         
         # Fetch Collection Metrics from API - USING SAME DATE RANGE AS DISBURSAL FILTERS
         print(f"[API Endpoint] ===== STARTING COLLECTION METRICS API CALL =====")
         print(f"[API Endpoint] Using date range from filters: {date_from} to {date_to}")
         collection_metrics = {}
+        
+        # Helper function to aggregate multiple rows of collection metrics
+        def aggregate_collection_metrics(rows):
+            """Aggregate collection metrics from multiple rows into a single dict"""
+            if not rows or len(rows) == 0:
+                return {}
+            
+            # Initialize aggregated dict with standard field names
+            aggregated = {
+                'total_collection_amount': 0,
+                'fresh_collection_amount': 0,
+                'reloan_collection_amount': 0,
+                'prepayment_amount': 0,
+                'due_date_amount': 0,
+                'overdue_amount': 0,
+                'total_collection_count': 0,
+                'fresh_collection_count': 0,
+                'reloan_collection_count': 0,
+                'prepayment_count': 0,
+                'due_date_count': 0,
+                'overdue_count': 0
+            }
+            
+            # Field name mappings - map various API field names to our standard names
+            field_mappings = {
+                # Amount fields
+                'total_collection_amount': ['total_collection_amount', 'totalCollectionAmount', 'total_amount', 'collection_amount', 'total'],
+                'fresh_collection_amount': ['fresh_collection_amount', 'freshCollectionAmount', 'fresh_amount', 'fresh'],
+                'reloan_collection_amount': ['reloan_collection_amount', 'reloanCollectionAmount', 'reloan_amount', 'reloan'],
+                'prepayment_amount': ['prepayment_amount', 'prepaymentAmount', 'prepayment'],
+                'due_date_amount': ['due_date_amount', 'dueDateAmount', 'on_time_collection', 'onTimeCollection', 'on_time_amount', 'onTimeAmount', 'ontime_amount', 'ontimeAmount', 'onTime_amount', 'on_time_collection_amount', 'onTimeCollectionAmount', 'due_date_collection', 'dueDateCollection', 'on_time_amount_collection', 'onTimeAmountCollection'],
+                'overdue_amount': ['overdue_amount', 'overdueAmount', 'overdue_collection', 'overdueCollection', 'overdue_collection_amount', 'overdueCollectionAmount'],
+                # Count fields
+                'total_collection_count': ['total_collection_count', 'totalCollectionCount', 'total_count', 'totalCount', 'total'],
+                'fresh_collection_count': ['fresh_collection_count', 'freshCollectionCount', 'fresh_count', 'freshCount', 'fresh'],
+                'reloan_collection_count': ['reloan_collection_count', 'reloanCollectionCount', 'reloan_count', 'reloanCount', 'reloan'],
+                'prepayment_count': ['prepayment_count', 'prepaymentCount', 'prepayment'],
+                'due_date_count': ['due_date_count', 'dueDateCount', 'on_time_count', 'onTimeCount', 'onTime'],
+                'overdue_count': ['overdue_count', 'overdueCount', 'overdue']
+            }
+            
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                
+                # Create case-insensitive lookup
+                row_keys_lower = {k.lower(): k for k in row.keys()}
+                
+                # For each standard field, try to find it in the row using all possible variations
+                # Process overdue fields FIRST to avoid conflicts with on_time fields
+                field_order = ['overdue_amount', 'overdue_count', 'due_date_amount', 'due_date_count', 
+                              'total_collection_amount', 'fresh_collection_amount', 'reloan_collection_amount', 
+                              'prepayment_amount', 'total_collection_count', 'fresh_collection_count', 
+                              'reloan_collection_count', 'prepayment_count']
+                
+                # Process fields in specific order
+                for standard_field in field_order:
+                    if standard_field not in field_mappings:
+                        continue
+                    variations = field_mappings[standard_field]
+                    found = False
+                    for variation in variations:
+                        # Try exact match first
+                        if variation in row:
+                            value = row[variation]
+                            if value is not None and value != '':
+                                try:
+                                    if 'count' in standard_field:
+                                        aggregated[standard_field] += int(float(value))
+                                    else:
+                                        aggregated[standard_field] += float(value)
+                                    found = True
+                                    break  # Found it, move to next field
+                                except (ValueError, TypeError):
+                                    pass
+                        # Try case-insensitive match
+                        elif variation.lower() in row_keys_lower:
+                            actual_key = row_keys_lower[variation.lower()]
+                            value = row[actual_key]
+                            # For overdue fields, make sure the key doesn't contain on_time/due_date
+                            if 'overdue' in standard_field:
+                                if 'on_time' in actual_key.lower() or 'ontime' in actual_key.lower() or 'due_date' in actual_key.lower() or 'duedate' in actual_key.lower():
+                                    continue  # Skip this match, it's not an overdue field
+                            # For due_date fields, make sure the key doesn't contain overdue
+                            elif 'due_date' in standard_field:
+                                if 'overdue' in actual_key.lower():
+                                    continue  # Skip this match, it's not an on_time field
+                            
+                            if value is not None and value != '':
+                                try:
+                                    if 'count' in standard_field:
+                                        aggregated[standard_field] += int(float(value))
+                                    else:
+                                        aggregated[standard_field] += float(value)
+                                    found = True
+                                    break  # Found it, move to next field
+                                except (ValueError, TypeError):
+                                    pass
+                    
+                    # If not found with variations, try partial matching for "on_time" or "ontime" in any key
+                    # BUT ONLY for due_date fields, and make sure we exclude overdue fields
+                    if not found and 'due_date' in standard_field:
+                        for key, value in row.items():
+                            key_lower = key.lower()
+                            # Check if key contains "on_time", "ontime", "due_date", or "duedate"
+                            # BUT EXCLUDE any keys that contain "overdue" to avoid mixing them up
+                            if (('on_time' in key_lower or 'ontime' in key_lower or 'due_date' in key_lower or 'duedate' in key_lower) 
+                                and 'overdue' not in key_lower and value is not None and value != ''):
+                                try:
+                                    if 'count' in standard_field and ('count' in key_lower or 'number' in key_lower):
+                                        aggregated[standard_field] += int(float(value))
+                                        found = True
+                                        break
+                                    elif 'amount' in standard_field and ('amount' in key_lower or 'amt' in key_lower or 'value' in key_lower):
+                                        aggregated[standard_field] += float(value)
+                                        found = True
+                                        break
+                                except (ValueError, TypeError):
+                                    pass
+                    
+                    # Also add partial matching for overdue fields, but exclude on_time/due_date fields
+                    if not found and 'overdue' in standard_field:
+                        for key, value in row.items():
+                            key_lower = key.lower()
+                            # Check if key contains "overdue" but EXCLUDE any keys that contain "on_time", "ontime", "due_date", or "duedate"
+                            if ('overdue' in key_lower 
+                                and 'on_time' not in key_lower and 'ontime' not in key_lower 
+                                and 'due_date' not in key_lower and 'duedate' not in key_lower
+                                and value is not None and value != ''):
+                                try:
+                                    if 'count' in standard_field and ('count' in key_lower or 'number' in key_lower):
+                                        aggregated[standard_field] += int(float(value))
+                                        found = True
+                                        break
+                                    elif 'amount' in standard_field and ('amount' in key_lower or 'amt' in key_lower or 'value' in key_lower):
+                                        aggregated[standard_field] += float(value)
+                                        found = True
+                                        break
+                                except (ValueError, TypeError):
+                                    pass
+            
+            return aggregated
         try:
             collection_api_url = 'https://backend.blinkrloan.com/insights/v2/collection_metrics'
             # Use the SAME date_from and date_to from filters (same as disbursal API)
@@ -937,9 +1275,10 @@ def disbursal_data_api(request):
                             print(f"[API Endpoint] Collection Metrics found 'data' key, type: {type(data_value)}")
                             # Check if data is an array (API structure: {"data": [{...}]})
                             if isinstance(data_value, list) and len(data_value) > 0:
-                                # Get first element from array
-                                collection_metrics = data_value[0] if isinstance(data_value[0], dict) else {}
-                                print(f"[API Endpoint] Collection Metrics extracted from 'data' array (first item): {collection_metrics}")
+                                # Aggregate all rows instead of just taking the first
+                                print(f"[API Endpoint] Collection Metrics found {len(data_value)} rows, aggregating all...")
+                                collection_metrics = aggregate_collection_metrics(data_value)
+                                print(f"[API Endpoint] Collection Metrics aggregated from all rows: {collection_metrics}")
                             elif isinstance(data_value, dict):
                                 # Data is already a dict
                                 collection_metrics = data_value
@@ -947,12 +1286,26 @@ def disbursal_data_api(request):
                             else:
                                 print(f"[API Endpoint] Collection Metrics 'data' key has unexpected type: {type(data_value)}")
                                 collection_metrics = {}
-                        elif 'result' in collection_data:
-                            collection_metrics = collection_data['result']
-                            print(f"[API Endpoint] Collection Metrics found in 'result' key: {collection_metrics}")
-                        elif 'metrics' in collection_data:
-                            collection_metrics = collection_data['metrics']
-                            print(f"[API Endpoint] Collection Metrics found in 'metrics' key: {collection_metrics}")
+                        elif 'result' in collection_data and not collection_metrics:
+                            result_value = collection_data['result']
+                            if isinstance(result_value, list) and len(result_value) > 0:
+                                # Aggregate all rows instead of just taking the first
+                                print(f"[API Endpoint] Collection Metrics found {len(result_value)} rows in 'result', aggregating all...")
+                                collection_metrics = aggregate_collection_metrics(result_value)
+                                print(f"[API Endpoint] Collection Metrics aggregated from 'result': {collection_metrics}")
+                            else:
+                                collection_metrics = result_value if isinstance(result_value, dict) else {}
+                                print(f"[API Endpoint] Collection Metrics found in 'result' key: {collection_metrics}")
+                        elif 'metrics' in collection_data and not collection_metrics:
+                            metrics_value = collection_data['metrics']
+                            if isinstance(metrics_value, list) and len(metrics_value) > 0:
+                                # Aggregate all rows instead of just taking the first
+                                print(f"[API Endpoint] Collection Metrics found {len(metrics_value)} rows in 'metrics', aggregating all...")
+                                collection_metrics = aggregate_collection_metrics(metrics_value)
+                                print(f"[API Endpoint] Collection Metrics aggregated from 'metrics': {collection_metrics}")
+                            else:
+                                collection_metrics = metrics_value if isinstance(metrics_value, dict) else {}
+                                print(f"[API Endpoint] Collection Metrics found in 'metrics' key: {collection_metrics}")
                         else:
                             # Use the full response as metrics
                             collection_metrics = collection_data
@@ -963,8 +1316,10 @@ def disbursal_data_api(request):
                                 for k, v in collection_metrics.items():
                                     print(f"[API Endpoint]   '{k}': {v} (type: {type(v).__name__})")
                     elif isinstance(collection_data, list) and len(collection_data) > 0:
-                        collection_metrics = collection_data[0] if isinstance(collection_data[0], dict) else {}
-                        print(f"[API Endpoint] Collection Metrics from List: {collection_metrics}")
+                        # Aggregate all rows instead of just taking the first
+                        print(f"[API Endpoint] Collection Metrics found {len(collection_data)} rows in list, aggregating all...")
+                        collection_metrics = aggregate_collection_metrics(collection_data)
+                        print(f"[API Endpoint] Collection Metrics aggregated from all rows: {collection_metrics}")
                 except Exception as e:
                     print(f"[API Endpoint] Error parsing collection metrics JSON: {e}")
                     print(f"[API Endpoint] Response text: {collection_response.text[:500]}")
@@ -1020,9 +1375,15 @@ def disbursal_data_api(request):
             'state_labels': state_labels,
             'state_values': state_values,
             'state_sanction': state_sanction,
+            'state_counts': state_counts,
             'city_labels': city_labels,
             'city_values': city_values,
             'city_sanction': city_sanction,
+            'city_counts': city_counts,
+            'source_labels': source_labels,
+            'source_values': source_values,
+            'source_sanction': source_sanction,
+            'source_counts': source_counts,
             'collection_metrics': collection_metrics,
             'last_updated': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
         }

@@ -427,9 +427,38 @@
                 
                 const metrics = data.collection_metrics;
                 
+                // Helper function to get value with multiple field name fallbacks (case-insensitive)
+                function getValue(obj, ...fieldNames) {
+                    if (!obj || typeof obj !== 'object') return 0;
+                    
+                    // First try exact matches
+                    for (const fieldName of fieldNames) {
+                        if (obj[fieldName] !== null && obj[fieldName] !== undefined && obj[fieldName] !== '') {
+                            return obj[fieldName];
+                        }
+                    }
+                    
+                    // Then try case-insensitive matches
+                    const objKeys = Object.keys(obj);
+                    const lowerObjKeys = objKeys.map(k => k.toLowerCase());
+                    
+                    for (const fieldName of fieldNames) {
+                        const lowerFieldName = fieldName.toLowerCase();
+                        const index = lowerObjKeys.indexOf(lowerFieldName);
+                        if (index !== -1) {
+                            const actualKey = objKeys[index];
+                            if (obj[actualKey] !== null && obj[actualKey] !== undefined && obj[actualKey] !== '') {
+                                return obj[actualKey];
+                            }
+                        }
+                    }
+                    
+                    return 0;
+                }
+                
                 // Helper function to update element
                 function updateElement(el, value, isAmount = true) {
-                    if (el && value !== null && value !== undefined) {
+                    if (el && value !== null && value !== undefined && value !== '') {
                         if (isAmount) {
                             el.textContent = '₹' + formatNumber(value);
                         } else {
@@ -441,26 +470,35 @@
                     return false;
                 }
                 
-                // Update all amount fields
-                updateElement(elements.total, metrics.total_collection_amount || metrics.totalCollectionAmount || metrics.total_amount || metrics.total || 0);
-                updateElement(elements.freshAmount, metrics.fresh_collection_amount || 0);
-                updateElement(elements.reloanAmount, metrics.reloan_collection_amount || 0);
-                updateElement(elements.prepaymentAmount, metrics.prepayment_amount || 0);
-                updateElement(elements.onTime, metrics.due_date_amount || metrics.on_time_collection || metrics.onTimeCollection || 0);
-                updateElement(elements.overdue, metrics.overdue_amount || metrics.overdue_collection || metrics.overdueCollection || metrics.overdue || 0);
+                // Update all amount fields with multiple field name variations
+                updateElement(elements.total, getValue(metrics, 'total_collection_amount', 'totalCollectionAmount', 'total_amount', 'collection_amount', 'total'));
+                updateElement(elements.freshAmount, getValue(metrics, 'fresh_collection_amount', 'freshCollectionAmount', 'fresh_amount', 'fresh'));
+                updateElement(elements.reloanAmount, getValue(metrics, 'reloan_collection_amount', 'reloanCollectionAmount', 'reloan_amount', 'reloan'));
+                updateElement(elements.prepaymentAmount, getValue(metrics, 'prepayment_amount', 'prepaymentAmount', 'prepayment'));
+                updateElement(elements.onTime, getValue(metrics, 'due_date_amount', 'dueDateAmount', 'on_time_collection', 'onTimeCollection', 'on_time', 'onTime', 'on_time_amount', 'onTimeAmount', 'ontime', 'ontime_amount', 'ontimeAmount', 'onTime_amount', 'on_time_collection_amount', 'onTimeCollectionAmount', 'due_date_collection', 'dueDateCollection', 'on_time_amount_collection', 'onTimeAmountCollection'));
+                updateElement(elements.overdue, getValue(metrics, 'overdue_amount', 'overdueAmount', 'overdue_collection', 'overdueCollection', 'overdue', 'overDue'));
                 
-                // Update all count fields
-                updateElement(elements.totalCount, metrics.total_collection_count || 0, false);
-                updateElement(elements.freshCount, metrics.fresh_collection_count || 0, false);
-                updateElement(elements.reloanCount, metrics.reloan_collection_count || 0, false);
-                updateElement(elements.prepaymentCount, metrics.prepayment_count || 0, false);
-                updateElement(elements.dueDateCount, metrics.due_date_count || 0, false);
-                updateElement(elements.overdueCount, metrics.overdue_count || 0, false);
+                // Update all count fields with multiple field name variations
+                updateElement(elements.totalCount, getValue(metrics, 'total_collection_count', 'totalCollectionCount', 'total_count', 'totalCount', 'total'), false);
+                updateElement(elements.freshCount, getValue(metrics, 'fresh_collection_count', 'freshCollectionCount', 'fresh_count', 'freshCount', 'fresh'), false);
+                updateElement(elements.reloanCount, getValue(metrics, 'reloan_collection_count', 'reloanCollectionCount', 'reloan_count', 'reloanCount', 'reloan'), false);
+                updateElement(elements.prepaymentCount, getValue(metrics, 'prepayment_count', 'prepaymentCount', 'prepayment'), false);
+                updateElement(elements.dueDateCount, getValue(metrics, 'due_date_count', 'dueDateCount', 'on_time_count', 'onTimeCount', 'onTime', 'ontime', 'ontime_count', 'onTime_count', 'on_time_collection_count', 'onTimeCollectionCount', 'due_date_collection_count', 'dueDateCollectionCount'), false);
+                updateElement(elements.overdueCount, getValue(metrics, 'overdue_count', 'overdueCount', 'overdue'), false);
                 
                 console.log('✓ Updated all Collection Metrics fields');
+                console.log('Collection Metrics Summary:', {
+                    total: getValue(metrics, 'total_collection_amount', 'totalCollectionAmount', 'total_amount', 'collection_amount', 'total'),
+                    fresh: getValue(metrics, 'fresh_collection_amount', 'freshCollectionAmount', 'fresh_amount', 'fresh'),
+                    reloan: getValue(metrics, 'reloan_collection_amount', 'reloanCollectionAmount', 'reloan_amount', 'reloan'),
+                    prepayment: getValue(metrics, 'prepayment_amount', 'prepaymentAmount', 'prepayment'),
+                    onTime: getValue(metrics, 'due_date_amount', 'dueDateAmount', 'on_time_collection', 'onTimeCollection', 'on_time', 'onTime', 'on_time_amount', 'onTimeAmount', 'ontime', 'ontime_amount', 'ontimeAmount', 'onTime_amount', 'on_time_collection_amount', 'onTimeCollectionAmount', 'due_date_collection', 'dueDateCollection', 'on_time_amount_collection', 'onTimeAmountCollection'),
+                    overdue: getValue(metrics, 'overdue_amount', 'overdueAmount', 'overdue_collection', 'overdueCollection', 'overdue', 'overDue')
+                });
             } else {
                 console.log('No collection_metrics found in data or it is not an object');
                 console.log('Full data object keys:', Object.keys(data));
+                console.log('Data object:', data);
             }
             
             console.log('KPI cards updated successfully');
@@ -476,9 +514,15 @@
             let stateLabels = data.state_labels;
             let stateValues = data.state_values;
             let stateSanction = data.state_sanction;
+            let stateCounts = data.state_counts;
             let cityLabels = data.city_labels;
             let cityValues = data.city_values;
             let citySanction = data.city_sanction;
+            let cityCounts = data.city_counts;
+            let sourceLabels = data.source_labels;
+            let sourceValues = data.source_values;
+            let sourceSanction = data.source_sanction;
+            let sourceCounts = data.source_counts;
             
             // If data is JSON string, parse it
             if (typeof stateLabels === 'string') {
@@ -486,6 +530,7 @@
                     stateLabels = JSON.parse(stateLabels);
                     stateValues = JSON.parse(stateValues);
                     stateSanction = JSON.parse(stateSanction);
+                    if (stateCounts) stateCounts = typeof stateCounts === 'string' ? JSON.parse(stateCounts) : stateCounts;
                 } catch (e) {
                     console.error('Error parsing state data:', e);
                 }
@@ -495,19 +540,36 @@
                     cityLabels = JSON.parse(cityLabels);
                     cityValues = JSON.parse(cityValues);
                     citySanction = JSON.parse(citySanction);
+                    if (cityCounts) cityCounts = typeof cityCounts === 'string' ? JSON.parse(cityCounts) : cityCounts;
                 } catch (e) {
                     console.error('Error parsing city data:', e);
+                }
+            }
+            if (typeof sourceLabels === 'string') {
+                try {
+                    sourceLabels = JSON.parse(sourceLabels);
+                    sourceValues = JSON.parse(sourceValues);
+                    sourceSanction = JSON.parse(sourceSanction);
+                    if (sourceCounts) sourceCounts = typeof sourceCounts === 'string' ? JSON.parse(sourceCounts) : sourceCounts;
+                } catch (e) {
+                    console.error('Error parsing source data:', e);
                 }
             }
             
             // Update state chart
             if (stateLabels && stateValues && stateLabels.length > 0 && stateValues.length > 0) {
+                // Update global data object for tooltip callbacks
+                window.stateData = { labels: stateLabels, values: stateValues, sanction: stateSanction || [], counts: stateCounts || [] };
+                
                 if (typeof window.stateChart !== 'undefined' && window.stateChart) {
                     console.log('Updating state chart');
                     window.stateChart.data.labels = stateLabels;
                     window.stateChart.data.datasets[0].data = stateValues;
                     if (stateSanction) {
                         window.stateChart.data.sanction = stateSanction;
+                    }
+                    if (stateCounts) {
+                        window.stateChart.data.counts = stateCounts;
                     }
                     // Update colors if needed
                     const chartColors = window.chartColors || [
@@ -520,13 +582,13 @@
                     // Update legend if function exists
                     if (typeof window.renderCustomLegend === 'function' && stateSanction) {
                         window.renderCustomLegend('stateLegend', stateLabels, stateValues, 
-                            window.stateChart.data.datasets[0].backgroundColor, stateSanction);
+                            window.stateChart.data.datasets[0].backgroundColor, stateSanction, stateCounts);
                     }
                 } else {
                     console.warn('State chart not found, attempting to initialize...');
                     if (typeof window.initializeCharts === 'function') {
                         // Update global data first
-                        window.stateData = { labels: stateLabels, values: stateValues, sanction: stateSanction };
+                        window.stateData = { labels: stateLabels, values: stateValues, sanction: stateSanction, counts: stateCounts || [] };
                         window.initializeCharts();
                     }
                 }
@@ -534,12 +596,18 @@
             
             // Update city chart
             if (cityLabels && cityValues && cityLabels.length > 0 && cityValues.length > 0) {
+                // Update global data object for tooltip callbacks
+                window.cityData = { labels: cityLabels, values: cityValues, sanction: citySanction || [], counts: cityCounts || [] };
+                
                 if (typeof window.cityChart !== 'undefined' && window.cityChart) {
                     console.log('Updating city chart');
                     window.cityChart.data.labels = cityLabels;
                     window.cityChart.data.datasets[0].data = cityValues;
                     if (citySanction) {
                         window.cityChart.data.sanction = citySanction;
+                    }
+                    if (cityCounts) {
+                        window.cityChart.data.counts = cityCounts;
                     }
                     // Update colors if needed
                     const chartColors = window.chartColors || [
@@ -552,13 +620,51 @@
                     // Update legend if function exists
                     if (typeof window.renderCustomLegend === 'function' && citySanction) {
                         window.renderCustomLegend('cityLegend', cityLabels, cityValues,
-                            window.cityChart.data.datasets[0].backgroundColor, citySanction);
+                            window.cityChart.data.datasets[0].backgroundColor, citySanction, cityCounts);
                     }
                 } else {
                     console.warn('City chart not found, attempting to initialize...');
                     if (typeof window.initializeCharts === 'function') {
                         // Update global data first
-                        window.cityData = { labels: cityLabels, values: cityValues, sanction: citySanction };
+                        window.cityData = { labels: cityLabels, values: cityValues, sanction: citySanction, counts: cityCounts || [] };
+                        window.initializeCharts();
+                    }
+                }
+            }
+            
+            // Update source chart
+            if (sourceLabels && sourceValues && sourceLabels.length > 0 && sourceValues.length > 0) {
+                // Update global data object for tooltip callbacks
+                window.sourceData = { labels: sourceLabels, values: sourceValues, sanction: sourceSanction || [], counts: sourceCounts || [] };
+                
+                if (typeof window.sourceChart !== 'undefined' && window.sourceChart) {
+                    console.log('Updating source chart');
+                    window.sourceChart.data.labels = sourceLabels;
+                    window.sourceChart.data.datasets[0].data = sourceValues;
+                    if (sourceSanction) {
+                        window.sourceChart.data.sanction = sourceSanction;
+                    }
+                    if (sourceCounts) {
+                        window.sourceChart.data.counts = sourceCounts;
+                    }
+                    // Update colors if needed
+                    const chartColors = window.chartColors || [
+                        '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6',
+                        '#ef4444', '#84cc16', '#f97316', '#14b8a6', '#a855f7', '#eab308'
+                    ];
+                    window.sourceChart.data.datasets[0].backgroundColor = chartColors.slice(0, sourceLabels.length);
+                    window.sourceChart.update('none');
+                    
+                    // Update legend if function exists
+                    if (typeof window.renderCustomLegend === 'function' && sourceSanction) {
+                        window.renderCustomLegend('sourceLegend', sourceLabels, sourceValues,
+                            window.sourceChart.data.datasets[0].backgroundColor, sourceSanction, sourceCounts);
+                    }
+                } else {
+                    console.warn('Source chart not found, attempting to initialize...');
+                    if (typeof window.initializeCharts === 'function') {
+                        // Update global data first
+                        window.sourceData = { labels: sourceLabels, values: sourceValues, sanction: sourceSanction, counts: sourceCounts || [] };
                         window.initializeCharts();
                     }
                 }
