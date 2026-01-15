@@ -535,7 +535,53 @@
                     total: totalAmount,
                     'fresh + reloan': (parseFloat(freshAmount) || 0) + (parseFloat(reloanAmount) || 0)
                 });
-                updateElement(elements.prepaymentAmount, getValue(metrics, 'prepayment_amount', 'prepaymentAmount', 'prepayment'));
+                
+                // Get prepayment amount with multiple field name variations
+                // Try to find prepayment_amount in the metrics object
+                let prepaymentAmount = 0;
+                if (metrics && typeof metrics === 'object') {
+                    // Try exact matches first
+                    if (metrics.prepayment_amount !== null && metrics.prepayment_amount !== undefined && metrics.prepayment_amount !== '') {
+                        prepaymentAmount = parseFloat(metrics.prepayment_amount) || 0;
+                        console.log('[Collection Metrics JS] Found prepayment_amount (exact):', prepaymentAmount);
+                    } else if (metrics.prepaymentAmount !== null && metrics.prepaymentAmount !== undefined && metrics.prepaymentAmount !== '') {
+                        prepaymentAmount = parseFloat(metrics.prepaymentAmount) || 0;
+                        console.log('[Collection Metrics JS] Found prepaymentAmount (camelCase):', prepaymentAmount);
+                    } else {
+                        // Try case-insensitive search
+                        const objKeys = Object.keys(metrics);
+                        const lowerObjKeys = objKeys.map(k => k.toLowerCase());
+                        const prepaymentKeys = ['prepayment_amount', 'prepaymentamount', 'prepayment', 'prepaymentamt', 'prepayment_amt'];
+                        
+                        for (const key of prepaymentKeys) {
+                            const index = lowerObjKeys.indexOf(key.toLowerCase());
+                            if (index !== -1) {
+                                const actualKey = objKeys[index];
+                                const value = metrics[actualKey];
+                                if (value !== null && value !== undefined && value !== '') {
+                                    prepaymentAmount = parseFloat(value) || 0;
+                                    console.log(`[Collection Metrics JS] Found prepayment via case-insensitive match: '${actualKey}' = ${prepaymentAmount}`);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                console.log('[Collection Metrics JS] Prepayment amount lookup result:', {
+                    'metrics keys': metrics ? Object.keys(metrics) : 'metrics is null/undefined',
+                    'prepayment_amount value': metrics?.prepayment_amount,
+                    'prepaymentAmount value': metrics?.prepaymentAmount,
+                    'prepayment value': metrics?.prepayment,
+                    'final prepaymentAmount': prepaymentAmount
+                });
+                
+                if (elements.prepaymentAmount) {
+                    updateElement(elements.prepaymentAmount, prepaymentAmount);
+                    console.log('[Collection Metrics JS] Updated prepaymentAmount element with value:', prepaymentAmount);
+                } else {
+                    console.log('[Collection Metrics JS] ERROR: prepaymentAmount element not found!');
+                }
                 updateElement(elements.onTime, getValue(metrics, 'due_date_amount', 'dueDateAmount', 'on_time_collection', 'onTimeCollection', 'on_time', 'onTime', 'on_time_amount', 'onTimeAmount', 'ontime', 'ontime_amount', 'ontimeAmount', 'onTime_amount', 'on_time_collection_amount', 'onTimeCollectionAmount', 'due_date_collection', 'dueDateCollection', 'on_time_amount_collection', 'onTimeAmountCollection'));
                 updateElement(elements.overdue, getValue(metrics, 'overdue_amount', 'overdueAmount', 'overdue_collection', 'overdueCollection', 'overdue', 'overDue'));
                 
@@ -550,19 +596,67 @@
                 updateElement(elements.totalCount, totalCount, false);
                 updateElement(elements.freshCount, freshCount, false);
                 updateElement(elements.reloanCount, reloanCount, false);
-                updateElement(elements.prepaymentCount, getValue(metrics, 'prepayment_count', 'prepaymentCount', 'prepayment'), false);
+                // Get prepayment count with explicit lookup (similar to prepayment_amount)
+                let prepaymentCount = 0;
+                if (metrics && typeof metrics === 'object') {
+                    // Try exact matches first
+                    if (metrics.prepayment_count !== null && metrics.prepayment_count !== undefined && metrics.prepayment_count !== '') {
+                        prepaymentCount = parseInt(metrics.prepayment_count) || 0;
+                        console.log('[Collection Metrics JS] Found prepayment_count (exact):', prepaymentCount);
+                    } else if (metrics.prepaymentCount !== null && metrics.prepaymentCount !== undefined && metrics.prepaymentCount !== '') {
+                        prepaymentCount = parseInt(metrics.prepaymentCount) || 0;
+                        console.log('[Collection Metrics JS] Found prepaymentCount (camelCase):', prepaymentCount);
+                    } else {
+                        // Try case-insensitive search
+                        const objKeys = Object.keys(metrics);
+                        const lowerObjKeys = objKeys.map(k => k.toLowerCase());
+                        const prepaymentCountKeys = ['prepayment_count', 'prepaymentcount', 'prepaymentcnt', 'prepayment_cnt'];
+                        
+                        for (const key of prepaymentCountKeys) {
+                            const index = lowerObjKeys.indexOf(key.toLowerCase());
+                            if (index !== -1) {
+                                const actualKey = objKeys[index];
+                                const value = metrics[actualKey];
+                                if (value !== null && value !== undefined && value !== '') {
+                                    prepaymentCount = parseInt(value) || 0;
+                                    console.log(`[Collection Metrics JS] Found prepayment_count via case-insensitive match: '${actualKey}' = ${prepaymentCount}`);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                console.log('[Collection Metrics JS] Prepayment count lookup result:', {
+                    'prepayment_count value': metrics?.prepayment_count,
+                    'prepaymentCount value': metrics?.prepaymentCount,
+                    'final prepaymentCount': prepaymentCount
+                });
+                
+                if (elements.prepaymentCount) {
+                    updateElement(elements.prepaymentCount, prepaymentCount, false);
+                    console.log('[Collection Metrics JS] Updated prepaymentCount element with value:', prepaymentCount);
+                } else {
+                    console.log('[Collection Metrics JS] ERROR: prepaymentCount element not found!');
+                }
                 updateElement(elements.dueDateCount, getValue(metrics, 'due_date_count', 'dueDateCount', 'on_time_count', 'onTimeCount', 'onTime', 'ontime', 'ontime_count', 'onTime_count', 'on_time_collection_count', 'onTimeCollectionCount', 'due_date_collection_count', 'dueDateCollectionCount'), false);
                 updateElement(elements.overdueCount, getValue(metrics, 'overdue_count', 'overdueCount', 'overdue'), false);
                 
                 console.log('✓ Updated all Collection Metrics fields');
+                // Get prepayment amount (already calculated above)
+                const prepaymentValue = prepaymentAmount; // Use the value we already calculated
+                const onTimeValue = getValue(metrics, 'due_date_amount', 'dueDateAmount', 'on_time_collection', 'onTimeCollection', 'on_time', 'onTime', 'on_time_amount', 'onTimeAmount', 'ontime', 'ontime_amount', 'ontimeAmount', 'onTime_amount', 'on_time_collection_amount', 'onTimeCollectionAmount', 'due_date_collection', 'dueDateCollection', 'on_time_amount_collection', 'onTimeAmountCollection');
+                const overdueValue = getValue(metrics, 'overdue_amount', 'overdueAmount', 'overdue_collection', 'overdueCollection', 'overdue', 'overDue');
                 console.log('Collection Metrics Summary:', {
                     total: totalAmount + ' (calculated as Fresh + Reloan)',
                     fresh: freshAmount,
                     reloan: reloanAmount,
-                    prepayment: getValue(metrics, 'prepayment_amount', 'prepaymentAmount', 'prepayment'),
-                    onTime: getValue(metrics, 'due_date_amount', 'dueDateAmount', 'on_time_collection', 'onTimeCollection', 'on_time', 'onTime', 'on_time_amount', 'onTimeAmount', 'ontime', 'ontime_amount', 'ontimeAmount', 'onTime_amount', 'on_time_collection_amount', 'onTimeCollectionAmount', 'due_date_collection', 'dueDateCollection', 'on_time_amount_collection', 'onTimeAmountCollection'),
-                    overdue: getValue(metrics, 'overdue_amount', 'overdueAmount', 'overdue_collection', 'overdueCollection', 'overdue', 'overDue')
+                    prepayment: prepaymentValue,
+                    prepaymentCount: prepaymentCount,
+                    onTime: onTimeValue,
+                    overdue: overdueValue
                 });
+                console.log('[Collection Metrics JS] Full metrics object:', metrics);
             } else {
                 console.log('No collection_metrics found in data or it is not an object');
                 console.log('Full data object keys:', Object.keys(data));

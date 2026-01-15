@@ -191,6 +191,16 @@ def custom_login(request):
 
 @login_required
 @never_cache
+def leads_summary(request):
+    """
+    Leads Summary page view
+    """
+    context = {}
+    return render(request, 'dashboard/pages/leads_summary.html', context)
+
+
+@login_required
+@never_cache
 def disbursal_summary(request):
     """
     Disbursal Summary page view - Fetches data from API and filters by disbursal_date
@@ -1814,6 +1824,27 @@ def disbursal_data_api(request):
                                         break
                                 except (ValueError, TypeError):
                                     pass
+                    
+                    # Add partial matching for prepayment fields - check any field containing "prepayment"
+                    if not found and 'prepayment' in standard_field:
+                        for key, value in row.items():
+                            key_lower = key.lower()
+                            # Check if key contains "prepayment"
+                            if ('prepayment' in key_lower 
+                                and value is not None and value != ''):
+                                try:
+                                    if 'count' in standard_field and ('count' in key_lower or 'number' in key_lower or 'cnt' in key_lower):
+                                        aggregated[standard_field] += int(float(value))
+                                        found = True
+                                        print(f"[Collection Metrics] Found prepayment field via partial match: '{key}' = {value}")
+                                        break
+                                    elif 'amount' in standard_field and ('amount' in key_lower or 'amt' in key_lower or 'value' in key_lower):
+                                        aggregated[standard_field] += float(value)
+                                        found = True
+                                        print(f"[Collection Metrics] Found prepayment field via partial match: '{key}' = {value}")
+                                        break
+                                except (ValueError, TypeError):
+                                    pass
             
             # At the end, recalculate total_collection_count as sum of Fresh + Reloan
             # This ensures it's always correct regardless of how it was calculated
@@ -2009,6 +2040,10 @@ def disbursal_data_api(request):
             print(f"[API Endpoint]   total_collection_amount: {collection_metrics.get('total_collection_amount')}")
             print(f"[API Endpoint]   fresh_collection_amount: {collection_metrics.get('fresh_collection_amount')}")
             print(f"[API Endpoint]   reloan_collection_amount: {collection_metrics.get('reloan_collection_amount')}")
+            print(f"[API Endpoint]   prepayment_amount: {collection_metrics.get('prepayment_amount')}")
+            print(f"[API Endpoint]   prepayment_count: {collection_metrics.get('prepayment_count')}")
+            print(f"[API Endpoint]   due_date_amount: {collection_metrics.get('due_date_amount')}")
+            print(f"[API Endpoint]   overdue_amount: {collection_metrics.get('overdue_amount')}")
         
         # Debug: Print collection metrics before returning
         print(f"[API Endpoint] ===== COLLECTION METRICS RESULT =====")

@@ -198,6 +198,32 @@
                     {% endif %}
                 </div>
                 
+                <!-- Quick Date Selection Buttons -->
+                <div class="flex items-center gap-2 pt-2 pb-2">
+                    <span class="text-sm font-medium text-gray-700 dark:text-slate-300">Quick Select:</span>
+                    <button 
+                        type="button"
+                        onclick="setQuickDate('today')"
+                        class="px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                    >
+                        Today
+                    </button>
+                    <button 
+                        type="button"
+                        onclick="setQuickDate('yesterday')"
+                        class="px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                    >
+                        Yesterday
+                    </button>
+                    <button 
+                        type="button"
+                        onclick="setQuickDate('lastMonth')"
+                        class="px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                    >
+                        Last Month
+                    </button>
+                </div>
+                
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-3 pt-2">
                     <button 
@@ -652,6 +678,48 @@ function initializeFiltersFromURL() {
     
     // Start initializing cities
     setTimeout(() => initializeCities(), 200);
+}
+
+// Quick date selection function
+function setQuickDate(option) {
+    const dateFrom = document.getElementById('date_from');
+    const dateTo = document.getElementById('date_to');
+    
+    if (!dateFrom || !dateTo) return;
+    
+    const today = new Date();
+    let fromDate, toDate;
+    
+    switch(option) {
+        case 'today':
+            fromDate = new Date(today);
+            toDate = new Date(today);
+            break;
+        case 'yesterday':
+            fromDate = new Date(today);
+            fromDate.setDate(today.getDate() - 1);
+            toDate = new Date(fromDate);
+            break;
+        case 'lastMonth':
+            // Get first day of last month
+            fromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            // Get last day of last month
+            toDate = new Date(today.getFullYear(), today.getMonth(), 0);
+            break;
+        default:
+            return;
+    }
+    
+    // Format dates as YYYY-MM-DD
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
+    dateFrom.value = formatDate(fromDate);
+    dateTo.value = formatDate(toDate);
 }
 
 // Initialize on page load

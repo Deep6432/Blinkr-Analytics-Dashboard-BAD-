@@ -7,6 +7,7 @@ from . import views
 urlpatterns = [
     path('', views.disbursal_summary, name='disbursal_summary'),
     path('dashboard/', views.disbursal_summary, name='dashboard'),  # Add dashboard route
+    path('leads-summary/', views.leads_summary, name='leads_summary'),
     path('disbursal-summary/', views.disbursal_summary, name='disbursal_summary'),
     path('api/disbursal-data/', views.disbursal_data_api, name='disbursal_data_api'),  # API endpoint for AJAX refresh
     path('api/disbursal-records/', views.disbursal_records_api, name='disbursal_records_api'),  # API endpoint for records table
