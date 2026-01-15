@@ -444,12 +444,18 @@
                 const metrics = data.collection_metrics;
                 
                 // Helper function to get value with multiple field name fallbacks (case-insensitive)
+                // IMPORTANT: For collection amounts, reject any field containing 'repayment' to avoid using repayment_amount
                 function getValue(obj, ...fieldNames) {
                     if (!obj || typeof obj !== 'object') return 0;
                     
                     // First try exact matches
                     for (const fieldName of fieldNames) {
                         if (obj[fieldName] !== null && obj[fieldName] !== undefined && obj[fieldName] !== '') {
+                            // Reject if field name contains 'repayment' (unless it's explicitly in the allowed list)
+                            if (fieldName.toLowerCase().includes('repayment') && !fieldName.toLowerCase().includes('collection')) {
+                                console.log(`[Collection Metrics JS] Rejecting '${fieldName}' - contains repayment`);
+                                continue;
+                            }
                             return obj[fieldName];
                         }
                     }
@@ -463,6 +469,11 @@
                         const index = lowerObjKeys.indexOf(lowerFieldName);
                         if (index !== -1) {
                             const actualKey = objKeys[index];
+                            // Reject if actual key contains 'repayment' (unless it's explicitly a collection field)
+                            if (actualKey.toLowerCase().includes('repayment') && !actualKey.toLowerCase().includes('collection')) {
+                                console.log(`[Collection Metrics JS] Rejecting '${actualKey}' (case-insensitive match) - contains repayment`);
+                                continue;
+                            }
                             if (obj[actualKey] !== null && obj[actualKey] !== undefined && obj[actualKey] !== '') {
                                 return obj[actualKey];
                             }
@@ -487,8 +498,9 @@
                 }
                 
                 // Get Fresh and Reloan amounts first
-                const freshAmount = getValue(metrics, 'fresh_collection_amount', 'freshCollectionAmount', 'fresh_amount', 'fresh') || 0;
-                const reloanAmount = getValue(metrics, 'reloan_collection_amount', 'reloanCollectionAmount', 'reloan_amount', 'reloan') || 0;
+                // IMPORTANT: ONLY use fresh_collection_amount and reloan_collection_amount - do not use repayment_amount or other variations
+                const freshAmount = getValue(metrics, 'fresh_collection_amount', 'freshCollectionAmount') || 0;
+                const reloanAmount = getValue(metrics, 'reloan_collection_amount', 'reloanCollectionAmount') || 0;
                 
                 // Calculate Total as Fresh + Reloan (always, even if total_collection_amount exists)
                 const totalAmount = (parseFloat(freshAmount) || 0) + (parseFloat(reloanAmount) || 0);

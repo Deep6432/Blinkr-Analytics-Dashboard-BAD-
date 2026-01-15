@@ -649,8 +649,15 @@ def disbursal_summary(request):
             print(f"[Collection Metrics] Found is_reloan_case field in records, aggregating by loan type...")
             # Debug: Print first record to see all available fields
             if filtered_rows and len(filtered_rows) > 0 and isinstance(filtered_rows[0], dict):
-                print(f"[Collection Metrics] Sample record fields: {list(filtered_rows[0].keys())}")
-                print(f"[Collection Metrics] Sample record values (first 1000 chars): {str(filtered_rows[0])[:1000]}")
+                sample = filtered_rows[0]
+                print(f"[Collection Metrics] ===== SAMPLE RECORD FOR COLLECTION AMOUNT DEBUG =====")
+                print(f"[Collection Metrics] Sample record fields: {list(sample.keys())}")
+                # Show all amount-related fields
+                amount_fields = {k: v for k, v in sample.items() if 'amount' in k.lower() or 'amt' in k.lower()}
+                print(f"[Collection Metrics] All amount-related fields in sample record:")
+                for k, v in sorted(amount_fields.items()):
+                    print(f"[Collection Metrics]   '{k}': {v} (type: {type(v).__name__})")
+                print(f"[Collection Metrics] ======================================================")
             # Aggregate collection amounts by is_reloan_case
             for row in filtered_rows:
                 if not isinstance(row, dict):
@@ -674,71 +681,59 @@ def disbursal_summary(request):
                 
                 print(f"[Collection Metrics] Record is_reloan_case value: {is_reloan} (type: {type(is_reloan).__name__})")
                 
-                # Try to find collection amount field - prioritize collection-specific fields
-                # Avoid generic "amount" fields which might be loan_amount or disbursal_amount
+                # Try to find collection amount field - ONLY use total_collection_amount (user specified requirement)
                 collection_amount = 0
                 
-                # First, try collection-specific field names (most specific)
-                # DO NOT include generic 'amount' - it might be loan_amount or disbursal_amount
-                collection_specific_fields = [
-                    'repayment_amount', 'Repayment_Amount', 'REPAYMENT_AMOUNT', 'repaymentAmount', 'RepaymentAmount',
-                    'collection_amount', 'Collection_Amount', 'COLLECTION_AMOUNT', 'collectionAmount', 'CollectionAmount',
-                    'collected_amount', 'Collected_Amount', 'COLLECTED_AMOUNT', 'collectedAmount', 'CollectedAmount',
-                    'collection_amt', 'Collection_Amt', 'collectionAmt', 'CollectionAmt',
-                    'collected_amt', 'Collected_Amt', 'collectedAmt', 'CollectedAmt',
-                    'repayment_amt', 'Repayment_Amt', 'repaymentAmt', 'RepaymentAmt',
-                    'paid_amount', 'paidAmount', 'PaidAmount', 'PAID_AMOUNT',
-                    'received_amount', 'receivedAmount', 'ReceivedAmount', 'RECEIVED_AMOUNT',
-                    'paid_amt', 'paidAmt', 'PaidAmt',
-                    'received_amt', 'receivedAmt', 'ReceivedAmt'
-                ]
+                # ONLY look for total_collection_amount - do not use repayment_amount or any other field
+                row_keys_lower = {k.lower(): k for k in row.keys()}
                 
-                for field in collection_specific_fields:
-                    if field in row:
-                        try:
-                            val = float(row[field] or 0)
-                            if val > 0:
-                                collection_amount = val
-                                print(f"[Collection Metrics] Found collection amount in '{field}': {collection_amount}")
-                                break
-                        except (ValueError, TypeError):
-                            continue
+                # Try exact match first
+                if 'total_collection_amount' in row:
+                    try:
+                        val = float(row['total_collection_amount'] or 0)
+                        collection_amount = val
+                        print(f"[Collection Metrics] Found total_collection_amount (exact): {collection_amount}")
+                    except (ValueError, TypeError) as e:
+                        print(f"[Collection Metrics] Error parsing total_collection_amount: {e}")
                 
-                    # If still not found, try case-insensitive search for collection-specific fields
-                    if collection_amount == 0:
-                        row_keys_lower = {k.lower(): k for k in row.keys()}
-                        for field_lower in ['repayment_amount', 'collection_amount', 'collected_amount', 'collection_amt', 'collected_amt', 'repayment_amt', 'paid_amount', 'received_amount', 'paid_amt', 'received_amt']:
-                            if field_lower in row_keys_lower:
-                                actual_key = row_keys_lower[field_lower]
-                                # ALWAYS skip if it contains loan/disbursal/sanction keywords
-                                if ('loan' in actual_key.lower() or 'disbursal' in actual_key.lower() or 'sanction' in actual_key.lower()):
-                                    print(f"[Collection Metrics] Skipping '{actual_key}' - contains loan/disbursal/sanction keyword")
-                                    continue
-                                try:
-                                    val = float(row[actual_key] or 0)
-                                    if val > 0:
-                                        collection_amount = val
-                                        print(f"[Collection Metrics] Found collection amount in '{actual_key}' (case-insensitive): {collection_amount}")
-                                        break
-                                except (ValueError, TypeError):
-                                    continue
+                # If not found, try case-insensitive search
+                if collection_amount == 0 and 'total_collection_amount' in row_keys_lower:
+                    actual_key = row_keys_lower['total_collection_amount']
+                    try:
+                        val = float(row[actual_key] or 0)
+                        collection_amount = val
+                        print(f"[Collection Metrics] Found total_collection_amount (case-insensitive, key='{actual_key}'): {collection_amount}")
+                    except (ValueError, TypeError) as e:
+                        print(f"[Collection Metrics] Error parsing total_collection_amount from '{actual_key}': {e}")
                 
-                # DO NOT use generic "amount" field - it's too risky (might be loan_amount)
-                # If we haven't found a collection amount by now, log all available fields
-                
+                # If still not found, log all available fields for debugging
                 if collection_amount == 0:
-                    print(f"[Collection Metrics] WARNING: No collection amount found in record. Available keys: {list(row.keys())}")
+                    print(f"[Collection Metrics] ERROR: total_collection_amount not found in record!")
+                    print(f"[Collection Metrics] Available keys: {list(row.keys())}")
+                    # Show all amount-related fields
+                    amount_fields = {k: row[k] for k in row.keys() if 'amount' in k.lower() or 'amt' in k.lower()}
+                    if amount_fields:
+                        print(f"[Collection Metrics] All amount-related fields in this record:")
+                        for af, af_val in sorted(amount_fields.items()):
+                            print(f"[Collection Metrics]   '{af}': {af_val} (type: {type(af_val).__name__})")
+                    print(f"[Collection Metrics] This record will be skipped (collection_amount = 0)")
                 
-                # Categorize by is_reloan_case
-                if is_reloan:
-                    aggregated['reloan_collection_amount'] += collection_amount
-                    aggregated['reloan_collection_count'] += 1
+                # Only categorize if we found total_collection_amount (skip records where it's 0 or missing)
+                if collection_amount > 0:
+                    # Categorize by is_reloan_case
+                    if is_reloan:
+                        aggregated['reloan_collection_amount'] += collection_amount
+                        aggregated['reloan_collection_count'] += 1
+                        print(f"[Collection Metrics] Added to Reloan: {collection_amount} (total now: {aggregated['reloan_collection_amount']})")
+                    else:
+                        aggregated['fresh_collection_amount'] += collection_amount
+                        aggregated['fresh_collection_count'] += 1
+                        print(f"[Collection Metrics] Added to Fresh: {collection_amount} (total now: {aggregated['fresh_collection_amount']})")
+                    
+                    aggregated['total_collection_amount'] += collection_amount
+                    aggregated['total_collection_count'] += 1
                 else:
-                    aggregated['fresh_collection_amount'] += collection_amount
-                    aggregated['fresh_collection_count'] += 1
-                
-                aggregated['total_collection_amount'] += collection_amount
-                aggregated['total_collection_count'] += 1
+                    print(f"[Collection Metrics] Skipping record - total_collection_amount is 0 or not found")
             
             print(f"[Collection Metrics] Aggregated by is_reloan_case - Fresh: ₹{aggregated['fresh_collection_amount']:.2f} ({aggregated['fresh_collection_count']} records), Reloan: ₹{aggregated['reloan_collection_amount']:.2f} ({aggregated['reloan_collection_count']} records)")
             
@@ -755,9 +750,11 @@ def disbursal_summary(request):
             print(f"[Collection Metrics] No is_reloan_case field found, using field name matching instead...")
         
         # Field name mappings - map various API field names to our standard names
+        # IMPORTANT: For total_collection_amount, fresh_collection_amount, and reloan_collection_amount,
+        # ONLY use total_collection_amount field (user requirement - do not use repayment_amount or collection_amount)
         field_mappings = {
-            # Amount fields
-            'total_collection_amount': ['total_collection_amount', 'totalCollectionAmount', 'total_amount', 'collection_amount', 'total', 'totalCollection', 'total_collection'],
+            # Amount fields - ONLY use total_collection_amount variations, NO repayment_amount or collection_amount
+            'total_collection_amount': ['total_collection_amount', 'Total_Collection_Amount', 'TOTAL_COLLECTION_AMOUNT', 'totalCollectionAmount', 'TotalCollectionAmount'],
             'fresh_collection_amount': ['fresh_collection_amount', 'freshCollectionAmount', 'fresh_amount', 'fresh', 'freshCollection', 'fresh_collection', 'freshCollectionAmt', 'fresh_collection_amt', 'freshAmt', 'fresh_amt'],
             'reloan_collection_amount': ['reloan_collection_amount', 'reloanCollectionAmount', 'reloan_amount', 'reloan', 'reloanCollection', 'reloan_collection', 'reloanCollectionAmt', 'reloan_collection_amt', 'reloanAmt', 'reloan_amt'],
             'prepayment_amount': ['prepayment_amount', 'prepaymentAmount', 'prepayment', 'prepaymentAmt', 'prepayment_amt'],
@@ -797,6 +794,18 @@ def disbursal_summary(request):
                 variations = field_mappings[standard_field]
                 found = False
                 for variation in variations:
+                    # For total_collection_amount, fresh_collection_amount, and reloan_collection_amount,
+                    # ONLY accept exact matches - do not use repayment_amount or collection_amount
+                    if standard_field in ['total_collection_amount', 'fresh_collection_amount', 'reloan_collection_amount']:
+                        # Skip any variation that contains 'repayment' or is not 'total_collection_amount' for total
+                        if standard_field == 'total_collection_amount':
+                            # ONLY accept total_collection_amount variations, reject repayment_amount, collection_amount, etc.
+                            if 'repayment' in variation.lower() or ('collection_amount' in variation.lower() and 'total' not in variation.lower()):
+                                continue
+                        # For fresh/reloan, we still use the variations but skip if it contains repayment
+                        elif 'repayment' in variation.lower():
+                            continue
+                    
                     # Try exact match first
                     if variation in row:
                         value = row[variation]
@@ -807,12 +816,24 @@ def disbursal_summary(request):
                                 else:
                                     aggregated[standard_field] += float(value)
                                 found = True
+                                print(f"[Collection Metrics] Found {standard_field} in '{variation}': {value}")
                                 break  # Found it, move to next field
                             except (ValueError, TypeError):
                                 pass
                     # Try case-insensitive match
                     elif variation.lower() in row_keys_lower:
                         actual_key = row_keys_lower[variation.lower()]
+                        # For total_collection_amount, reject if actual_key contains 'repayment' or is not total_collection_amount
+                        if standard_field == 'total_collection_amount':
+                            if 'repayment' in actual_key.lower() or ('collection_amount' in actual_key.lower() and 'total' not in actual_key.lower()):
+                                print(f"[Collection Metrics] Rejecting '{actual_key}' for total_collection_amount - contains repayment or is not total_collection_amount")
+                                continue
+                        # For fresh/reloan, reject if contains repayment
+                        elif standard_field in ['fresh_collection_amount', 'reloan_collection_amount']:
+                            if 'repayment' in actual_key.lower():
+                                print(f"[Collection Metrics] Rejecting '{actual_key}' for {standard_field} - contains repayment")
+                                continue
+                        
                         value = row[actual_key]
                         # For overdue fields, make sure the key doesn't contain on_time/due_date
                         if 'overdue' in standard_field:
@@ -830,6 +851,7 @@ def disbursal_summary(request):
                                 else:
                                     aggregated[standard_field] += float(value)
                                 found = True
+                                print(f"[Collection Metrics] Found {standard_field} in '{actual_key}' (case-insensitive): {value}")
                                 break  # Found it, move to next field
                             except (ValueError, TypeError):
                                 pass
@@ -1519,135 +1541,74 @@ def disbursal_data_api(request):
                     
                     # First, try collection-specific field names (most specific)
                     # DO NOT include generic 'amount' - it might be loan_amount or disbursal_amount
-                    collection_specific_fields = [
-                        'repayment_amount', 'Repayment_Amount', 'REPAYMENT_AMOUNT', 'repaymentAmount', 'RepaymentAmount',
-                        'collection_amount', 'Collection_Amount', 'COLLECTION_AMOUNT', 'collectionAmount', 'CollectionAmount',
-                        'collected_amount', 'Collected_Amount', 'COLLECTED_AMOUNT', 'collectedAmount', 'CollectedAmount',
-                        'collection_amt', 'Collection_Amt', 'collectionAmt', 'CollectionAmt',
-                        'collected_amt', 'Collected_Amt', 'collectedAmt', 'CollectedAmt',
-                        'repayment_amt', 'Repayment_Amt', 'repaymentAmt', 'RepaymentAmt',
-                        'paid_amount', 'paidAmount', 'PaidAmount', 'PAID_AMOUNT',
-                        'received_amount', 'receivedAmount', 'ReceivedAmount', 'RECEIVED_AMOUNT',
-                        'paid_amt', 'paidAmt', 'PaidAmt',
-                        'received_amt', 'receivedAmt', 'ReceivedAmt'
-                    ]
+                    # ONLY use total_collection_amount - do not use repayment_amount or any other field
+                    # Try exact match first
+                    if 'total_collection_amount' in row:
+                        try:
+                            val = float(row['total_collection_amount'] or 0)
+                            collection_amount = val
+                            print(f"[API Endpoint] Found total_collection_amount (exact): {collection_amount}")
+                        except (ValueError, TypeError) as e:
+                            print(f"[API Endpoint] Error parsing total_collection_amount: {e}")
                     
-                    for field in collection_specific_fields:
-                        if field in row:
-                            try:
-                                val = float(row[field] or 0)
-                                if val > 0:
-                                    collection_amount = val
-                                    print(f"[API Endpoint] Found collection amount in '{field}': {collection_amount}")
-                                    break
-                            except (ValueError, TypeError):
-                                continue
-                    
-                    # If still not found, try ANY numeric field that's not loan/disbursal related
-                    # BUT be very careful - only use fields that are clearly collection-related
+                    # If not found, try case-insensitive search
                     if collection_amount == 0:
                         row_keys_lower = {k.lower(): k for k in row.keys()}
-                        # Exclude loan/disbursal/sanction fields - be very strict
-                        excluded_keywords = ['loan', 'disbursal', 'sanction', 'id', 'date', 'time', 'status', 'type', 'case', 'reloan', 'principal', 'interest', 'fee', 'tenure', 'emi']
-                        # Only consider fields that might be collection-related
-                        collection_related_keywords = ['collection', 'repayment', 'paid', 'received', 'collected', 'amount', 'amt']
-                        
-                        for k, v in row.items():
-                            k_lower = k.lower()
-                            # Skip if it's an excluded field
-                            if any(excluded in k_lower for excluded in excluded_keywords):
-                                continue
-                            # Only use if it contains collection-related keywords
-                            if not any(keyword in k_lower for keyword in collection_related_keywords):
-                                continue
-                            # Check if it's a numeric value
-                            if isinstance(v, (int, float)) and v > 0:
-                                collection_amount = float(v)
-                                print(f"[API Endpoint] Using numeric field '{k}' as collection amount: {collection_amount}")
-                                break
-                            elif isinstance(v, str):
-                                try:
-                                    val = float(v)
-                                    if val > 0:
-                                        collection_amount = val
-                                        print(f"[API Endpoint] Using string numeric field '{k}' as collection amount: {collection_amount}")
-                                        break
-                                except:
-                                    pass
-                    
-                    # If still no amount found, try case-insensitive search for collection-specific fields
-                    if collection_amount == 0:
-                        row_keys_lower = {k.lower(): k for k in row.keys()}
-                        for field_lower in ['repayment_amount', 'collection_amount', 'collected_amount', 'collection_amt', 'collected_amt', 'repayment_amt', 'total_collection', 'total_collected']:
-                            if field_lower in row_keys_lower:
-                                actual_key = row_keys_lower[field_lower]
-                                # Skip if it's loan_amount or disbursal_amount (but allow repayment_amount)
-                                if field_lower != 'repayment_amount' and ('loan' in actual_key.lower() or 'disbursal' in actual_key.lower() or 'sanction' in actual_key.lower()):
-                                    continue
-                                try:
-                                    val = float(row[actual_key] or 0)
-                                    if val > 0:
-                                        collection_amount = val
-                                        print(f"[API Endpoint] Found collection amount in '{actual_key}' (case-insensitive): {collection_amount}")
-                                        break
-                                except (ValueError, TypeError):
-                                    continue
-                    
-                    # Last resort: try generic "amount" but only if no loan/disbursal fields exist
-                    if collection_amount == 0:
-                        row_keys_lower = {k.lower(): k for k in row.keys()}
-                        # Check if there are loan/disbursal fields - if so, don't use generic "amount"
-                        has_loan_fields = any('loan' in k.lower() or 'disbursal' in k.lower() or 'sanction' in k.lower() 
-                                             for k in row.keys())
-                        if not has_loan_fields and 'amount' in row_keys_lower:
-                            actual_key = row_keys_lower['amount']
+                        if 'total_collection_amount' in row_keys_lower:
+                            actual_key = row_keys_lower['total_collection_amount']
                             try:
                                 val = float(row[actual_key] or 0)
-                                if val > 0:
-                                    collection_amount = val
-                                    print(f"[API Endpoint] Using generic 'amount' field (no loan fields found): {collection_amount}")
-                            except (ValueError, TypeError):
-                                pass
+                                collection_amount = val
+                                print(f"[API Endpoint] Found total_collection_amount (case-insensitive, key='{actual_key}'): {collection_amount}")
+                            except (ValueError, TypeError) as e:
+                                print(f"[API Endpoint] Error parsing total_collection_amount from '{actual_key}': {e}")
                     
-                    # Last resort: If still zero, try ANY positive numeric field (excluding IDs, dates, counts, loan/disbursal)
+                    # ONLY use total_collection_amount - do not use repayment_amount or any other field
+                    # If not found, try case-insensitive search for total_collection_amount
+                    if collection_amount == 0:
+                        row_keys_lower = {k.lower(): k for k in row.keys()}
+                        if 'total_collection_amount' in row_keys_lower:
+                            actual_key = row_keys_lower['total_collection_amount']
+                            try:
+                                val = float(row[actual_key] or 0)
+                                collection_amount = val
+                                print(f"[API Endpoint] Found total_collection_amount (case-insensitive, key='{actual_key}'): {collection_amount}")
+                            except (ValueError, TypeError) as e:
+                                print(f"[API Endpoint] Error parsing total_collection_amount from '{actual_key}': {e}")
+                    
+                    # If still not found, log all available fields for debugging
                     if collection_amount == 0:
                         record_num = aggregated['total_collection_count'] + 1
                         if record_num <= 3:  # Only log for first 3 records to avoid spam
-                            print(f"[API Endpoint] WARNING: No collection amount found in record #{record_num}. Available keys: {list(row.keys())}")
-                            # Print all numeric fields that might be the amount
-                            print(f"[API Endpoint] Numeric fields in record #{record_num}:")
-                            for k, v in row.items():
-                                if isinstance(v, (int, float)) and v != 0:
-                                    print(f"[API Endpoint]   '{k}': {v} (type: {type(v).__name__}) - MIGHT BE COLLECTION AMOUNT")
-                        
-                        # Try to use ANY positive numeric field as last resort (excluding IDs, dates, counts, and loan/disbursal fields)
-                        for k, v in row.items():
-                            k_lower = k.lower()
-                            # Skip IDs, dates, counts, and loan/disbursal fields
-                            if any(skip in k_lower for skip in ['id', 'date', 'time', 'count', 'cnt', 'loan', 'disbursal', 'sanction', 'status', 'type', 'case', 'reloan', 'fresh']):
-                                continue
-                            if isinstance(v, (int, float)) and v > 0 and v < 1000000000:  # Reasonable upper limit (1 billion)
-                                collection_amount = float(v)
-                                print(f"[API Endpoint] Using '{k}' as collection amount (last resort): {collection_amount}")
-                                break
+                            print(f"[API Endpoint] ERROR: total_collection_amount not found in record #{record_num}!")
+                            print(f"[API Endpoint] Available keys: {list(row.keys())}")
+                            # Show all amount-related fields
+                            amount_fields = {k: row[k] for k in row.keys() if 'amount' in k.lower() or 'amt' in k.lower()}
+                            if amount_fields:
+                                print(f"[API Endpoint] All amount-related fields in record #{record_num}:")
+                                for af, af_val in sorted(amount_fields.items()):
+                                    print(f"[API Endpoint]   '{af}': {af_val} (type: {type(af_val).__name__})")
+                            print(f"[API Endpoint] This record will be skipped (collection_amount = 0)")
                     else:
                         record_num = aggregated['total_collection_count'] + 1
-                        print(f"[API Endpoint] ✓ Found collection amount: ₹{collection_amount:.2f} for record #{record_num} (is_reloan={is_reloan})")
+                        print(f"[API Endpoint] ✓ Found total_collection_amount: ₹{collection_amount:.2f} for record #{record_num} (is_reloan={is_reloan})")
                     
-                    # Categorize by is_reloan_case
-                    if is_reloan:
-                        aggregated['reloan_collection_amount'] += collection_amount
-                        aggregated['reloan_collection_count'] += 1
-                        if collection_amount > 0:
-                            print(f"[Collection Metrics] Reloan record #{aggregated['reloan_collection_count']}: amount=₹{collection_amount:.2f}, is_reloan={is_reloan}")
+                    # Only categorize if we found total_collection_amount (skip records where it's 0 or missing)
+                    if collection_amount > 0:
+                        # Categorize by is_reloan_case
+                        if is_reloan:
+                            aggregated['reloan_collection_amount'] += collection_amount
+                            aggregated['reloan_collection_count'] += 1
+                            print(f"[API Endpoint] Added to Reloan: {collection_amount} (total now: {aggregated['reloan_collection_amount']})")
+                        else:
+                            aggregated['fresh_collection_amount'] += collection_amount
+                            aggregated['fresh_collection_count'] += 1
+                            print(f"[API Endpoint] Added to Fresh: {collection_amount} (total now: {aggregated['fresh_collection_amount']})")
+                        
+                        aggregated['total_collection_amount'] += collection_amount
+                        aggregated['total_collection_count'] += 1
                     else:
-                        aggregated['fresh_collection_amount'] += collection_amount
-                        aggregated['fresh_collection_count'] += 1
-                        if collection_amount > 0:
-                            print(f"[Collection Metrics] Fresh record #{aggregated['fresh_collection_count']}: amount=₹{collection_amount:.2f}, is_reloan={is_reloan}")
-                    
-                    aggregated['total_collection_amount'] += collection_amount
-                    aggregated['total_collection_count'] += 1
+                        print(f"[API Endpoint] Skipping record - total_collection_amount is 0 or not found")
                 
                 print(f"[API Endpoint] Aggregated by is_reloan_case - Fresh: ₹{aggregated['fresh_collection_amount']:.2f} ({aggregated['fresh_collection_count']} records), Reloan: ₹{aggregated['reloan_collection_amount']:.2f} ({aggregated['reloan_collection_count']} records)")
                 
@@ -1664,9 +1625,11 @@ def disbursal_data_api(request):
                 print(f"[API Endpoint] No is_reloan_case field found, using field name matching instead...")
             
             # Field name mappings - map various API field names to our standard names
+            # IMPORTANT: For total_collection_amount, fresh_collection_amount, and reloan_collection_amount,
+            # ONLY use total_collection_amount field (user requirement - do not use repayment_amount or collection_amount)
             field_mappings = {
-                # Amount fields
-                'total_collection_amount': ['total_collection_amount', 'totalCollectionAmount', 'total_amount', 'collection_amount', 'total', 'totalCollection', 'total_collection'],
+                # Amount fields - ONLY use total_collection_amount variations, NO repayment_amount or collection_amount
+                'total_collection_amount': ['total_collection_amount', 'Total_Collection_Amount', 'TOTAL_COLLECTION_AMOUNT', 'totalCollectionAmount', 'TotalCollectionAmount'],
                 'fresh_collection_amount': ['fresh_collection_amount', 'freshCollectionAmount', 'fresh_amount', 'fresh', 'freshCollection', 'fresh_collection', 'freshCollectionAmt', 'fresh_collection_amt', 'freshAmt', 'fresh_amt'],
                 'reloan_collection_amount': ['reloan_collection_amount', 'reloanCollectionAmount', 'reloan_amount', 'reloan', 'reloanCollection', 'reloan_collection', 'reloanCollectionAmt', 'reloan_collection_amt', 'reloanAmt', 'reloan_amt'],
                 'prepayment_amount': ['prepayment_amount', 'prepaymentAmount', 'prepayment', 'prepaymentAmt', 'prepayment_amt'],
@@ -1706,6 +1669,18 @@ def disbursal_data_api(request):
                     variations = field_mappings[standard_field]
                     found = False
                     for variation in variations:
+                        # For total_collection_amount, fresh_collection_amount, and reloan_collection_amount,
+                        # ONLY accept exact matches - do not use repayment_amount or collection_amount
+                        if standard_field in ['total_collection_amount', 'fresh_collection_amount', 'reloan_collection_amount']:
+                            # Skip any variation that contains 'repayment' or is not 'total_collection_amount' for total
+                            if standard_field == 'total_collection_amount':
+                                # ONLY accept total_collection_amount variations, reject repayment_amount, collection_amount, etc.
+                                if 'repayment' in variation.lower() or ('collection_amount' in variation.lower() and 'total' not in variation.lower()):
+                                    continue
+                            # For fresh/reloan, we still use the variations but skip if it contains repayment
+                            elif 'repayment' in variation.lower():
+                                continue
+                        
                         # Try exact match first
                         if variation in row:
                             value = row[variation]
@@ -1716,12 +1691,24 @@ def disbursal_data_api(request):
                                     else:
                                         aggregated[standard_field] += float(value)
                                     found = True
+                                    print(f"[API Endpoint] Found {standard_field} in '{variation}': {value}")
                                     break  # Found it, move to next field
                                 except (ValueError, TypeError):
                                     pass
                         # Try case-insensitive match
                         elif variation.lower() in row_keys_lower:
                             actual_key = row_keys_lower[variation.lower()]
+                            # For total_collection_amount, reject if actual_key contains 'repayment' or is not total_collection_amount
+                            if standard_field == 'total_collection_amount':
+                                if 'repayment' in actual_key.lower() or ('collection_amount' in actual_key.lower() and 'total' not in actual_key.lower()):
+                                    print(f"[API Endpoint] Rejecting '{actual_key}' for total_collection_amount - contains repayment or is not total_collection_amount")
+                                    continue
+                            # For fresh/reloan, reject if contains repayment
+                            elif standard_field in ['fresh_collection_amount', 'reloan_collection_amount']:
+                                if 'repayment' in actual_key.lower():
+                                    print(f"[API Endpoint] Rejecting '{actual_key}' for {standard_field} - contains repayment")
+                                    continue
+                            
                             value = row[actual_key]
                             # For overdue fields, make sure the key doesn't contain on_time/due_date
                             if 'overdue' in standard_field:
