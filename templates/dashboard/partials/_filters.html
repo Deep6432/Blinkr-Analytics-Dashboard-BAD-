@@ -46,7 +46,24 @@
                 hx-swap="outerHTML"
                 {% endif %}
             >
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 {% if request.resolver_match.url_name == 'collection_summary' %}lg:grid-cols-6{% else %}lg:grid-cols-4{% endif %} gap-4">
+                    {% if request.resolver_match.url_name == 'collection_summary' %}
+                    <!-- Date Type Selector (Collection Summary only) -->
+                    <div>
+                        <label for="date_type" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                            Date Type
+                        </label>
+                        <select
+                            id="date_type"
+                            name="date_type"
+                            class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="repayment" {% if request.GET.date_type == 'repayment' or not request.GET.date_type %}selected{% endif %}>Repayment Date</option>
+                            <option value="disbursal" {% if request.GET.date_type == 'disbursal' %}selected{% endif %}>Disbursal Date</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                    
                     <!-- Date From -->
                     <div>
                         <label for="date_from" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
@@ -158,6 +175,42 @@
                             </div>
                         </div>
                     </div>
+
+                    {% if request.resolver_match.url_name == 'collection_summary' %}
+                    <!-- Actual Repayment Bucket -->
+                    <div>
+                        <label for="actual_repayment_bucket" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                            Actual Repayment Bucket
+                        </label>
+                        <select
+                            id="actual_repayment_bucket"
+                            name="actual_repayment_bucket"
+                            class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">All</option>
+                            {% for b in actual_repayment_buckets %}
+                                <option value="{{ b }}" {% if request.GET.actual_repayment_bucket == b %}selected{% endif %}>{{ b }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Loan Pre/Post Ontime Status -->
+                    <div>
+                        <label for="loan_pre_post_ontime_status" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                            Loan Pre/Post Ontime Status
+                        </label>
+                        <select
+                            id="loan_pre_post_ontime_status"
+                            name="loan_pre_post_ontime_status"
+                            class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">All</option>
+                            {% for s in loan_pre_post_ontime_statuses %}
+                                <option value="{{ s }}" {% if request.GET.loan_pre_post_ontime_status == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
                     
                     <!-- Product Filter (if applicable) -->
                     {% if products %}
@@ -278,6 +331,17 @@ function handleFilterSubmit(event) {
     url.searchParams.delete('city');
     url.searchParams.delete('date_from');
     url.searchParams.delete('date_to');
+    url.searchParams.delete('date_type');
+    url.searchParams.delete('product');
+    url.searchParams.delete('credit_person');
+    url.searchParams.delete('actual_repayment_bucket');
+    url.searchParams.delete('loan_pre_post_ontime_status');
+    
+    // Add date type parameter (Collection Summary only)
+    const dateType = document.getElementById('date_type');
+    if (dateType && dateType.value) {
+        url.searchParams.set('date_type', dateType.value);
+    }
     
     // Add date parameters if present
     const dateFrom = document.getElementById('date_from');
@@ -306,6 +370,16 @@ function handleFilterSubmit(event) {
             url.searchParams.append('city', checkbox.value);
         });
     }
+
+    // Add single-select filters if present on the page
+    const product = document.getElementById('product');
+    if (product && product.value) url.searchParams.set('product', product.value);
+    const creditPerson = document.getElementById('credit_person');
+    if (creditPerson && creditPerson.value) url.searchParams.set('credit_person', creditPerson.value);
+    const arb = document.getElementById('actual_repayment_bucket');
+    if (arb && arb.value) url.searchParams.set('actual_repayment_bucket', arb.value);
+    const lps = document.getElementById('loan_pre_post_ontime_status');
+    if (lps && lps.value) url.searchParams.set('loan_pre_post_ontime_status', lps.value);
     
     // Prevent default form submission and redirect manually
     event.preventDefault();
@@ -483,6 +557,22 @@ function updateActiveFilters() {
     
     const params = new URLSearchParams(window.location.search);
     
+    // Handle date type filter (Collection Summary only)
+    const dateType = params.get('date_type');
+    if (dateType) {
+        const chip = document.createElement('div');
+        chip.className = 'inline-flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-500/30';
+        chip.innerHTML = `
+            <span>Date Type: ${dateType === 'repayment' ? 'Repayment Date' : 'Disbursal Date'}</span>
+            <button onclick="removeFilter('date_type')" class="hover:text-blue-900">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        `;
+        container.appendChild(chip);
+    }
+    
     // Handle date filters
     ['date_from', 'date_to'].forEach(key => {
         const value = params.get(key);
@@ -522,13 +612,18 @@ function updateActiveFilters() {
     });
     
     // Handle other filters
-    ['product', 'credit_person'].forEach(key => {
+    ['product', 'credit_person', 'actual_repayment_bucket', 'loan_pre_post_ontime_status'].forEach(key => {
         const value = params.get(key);
         if (value) {
             const chip = document.createElement('div');
             chip.className = 'inline-flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-500/30';
             chip.innerHTML = `
-                <span>${key === 'product' ? 'Product' : 'Credit Person'}: ${value}</span>
+                <span>${
+                    key === 'product' ? 'Product' :
+                    key === 'credit_person' ? 'Credit Person' :
+                    key === 'actual_repayment_bucket' ? 'Actual Repayment Bucket' :
+                    'Loan Pre/Post Ontime Status'
+                }: ${value}</span>
                 <button onclick="removeFilter('${key}')" class="hover:text-blue-900">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -584,6 +679,22 @@ function initializeFiltersFromURL() {
         } else if (!dateTo.value) {
             dateTo.value = today;
         }
+    }
+
+    // Initialize date type (Collection Summary only)
+    const dateType = document.getElementById('date_type');
+    if (dateType && params.get('date_type')) {
+        dateType.value = params.get('date_type');
+    }
+    
+    // Initialize extra selects (if present)
+    const arb = document.getElementById('actual_repayment_bucket');
+    if (arb && params.get('actual_repayment_bucket')) {
+        arb.value = params.get('actual_repayment_bucket');
+    }
+    const lps = document.getElementById('loan_pre_post_ontime_status');
+    if (lps && params.get('loan_pre_post_ontime_status')) {
+        lps.value = params.get('loan_pre_post_ontime_status');
     }
     
     // Initialize state checkboxes - with retry logic
@@ -686,40 +797,73 @@ function setQuickDate(option) {
     const dateTo = document.getElementById('date_to');
     
     if (!dateFrom || !dateTo) return;
-    
-    const today = new Date();
-    let fromDate, toDate;
+
+    // Use IST calendar date to match backend/API expectations.
+    // IMPORTANT: produce YYYY-MM-DD strings in a timezone-safe way.
+    function getDateStrInTZ(timeZone) {
+        try {
+            return new Intl.DateTimeFormat('en-CA', {
+                timeZone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).format(new Date()); // YYYY-MM-DD
+        } catch (e) {
+            // fallback to local YYYY-MM-DD
+            return new Date().toISOString().split('T')[0];
+        }
+    }
+    function addDaysToYMD(ymd, deltaDays) {
+        const parts = String(ymd).split('-').map(n => parseInt(n, 10));
+        if (parts.length !== 3 || parts.some(n => Number.isNaN(n))) return ymd;
+        const [y, m, d] = parts;
+        const dt = new Date(Date.UTC(y, m - 1, d + deltaDays));
+        return dt.toISOString().slice(0, 10);
+    }
+
+    const istToday = getDateStrInTZ('Asia/Kolkata'); // YYYY-MM-DD
+    let fromStr = istToday;
+    let toStr = istToday;
     
     switch(option) {
         case 'today':
-            fromDate = new Date(today);
-            toDate = new Date(today);
+            fromStr = istToday;
+            toStr = istToday;
             break;
         case 'yesterday':
-            fromDate = new Date(today);
-            fromDate.setDate(today.getDate() - 1);
-            toDate = new Date(fromDate);
+            fromStr = addDaysToYMD(istToday, -1);
+            toStr = fromStr;
             break;
         case 'lastMonth':
-            // Get first day of last month
-            fromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-            // Get last day of last month
-            toDate = new Date(today.getFullYear(), today.getMonth(), 0);
+            // Compute last month range based on IST calendar date
+            {
+                const [y, m] = istToday.split('-').map(n => parseInt(n, 10));
+                const first = new Date(Date.UTC(y, m - 2, 1));
+                const last = new Date(Date.UTC(y, m - 1, 0));
+                fromStr = first.toISOString().slice(0, 10);
+                toStr = last.toISOString().slice(0, 10);
+            }
             break;
         default:
             return;
     }
     
-    // Format dates as YYYY-MM-DD
-    const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-    
-    dateFrom.value = formatDate(fromDate);
-    dateTo.value = formatDate(toDate);
+    dateFrom.value = fromStr;
+    dateTo.value = toStr;
+
+    // Collection Summary UX: apply immediately after quick select
+    try {
+        const path = window.location.pathname || '';
+        const isCollectionSummary = path.includes('/collection-summary') || path.includes('/collection-without-fraud');
+        if (isCollectionSummary) {
+            const form = document.getElementById('filter-form');
+            if (form) {
+                form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+        }
+    } catch (e) {
+        // no-op
+    }
 }
 
 // Initialize on page load

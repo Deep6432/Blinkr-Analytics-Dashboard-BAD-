@@ -41,7 +41,8 @@
     <link rel="stylesheet" href="{% static 'dashboard/styles.css' %}">
     
     <!-- Custom Scripts -->
-    <script src="{% static 'dashboard/dashboard.js' %}" defer></script>
+    <!-- Versioned to prevent stale cached JS causing reload loops -->
+    <script src="{% static 'dashboard/dashboard.js' %}?v=20260116-1" defer></script>
     
     {% block extra_head %}{% endblock %}
     

@@ -1,28 +1,738 @@
+
 {% extends 'dashboard/base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}Collection Summary - Blinkr Analytics Dashboard{% endblock %}
 
 {% block page_title %}Collection Summary{% endblock %}
-{% block page_subtitle %}{% endblock %}
+{% block page_subtitle %}Data from `insights/v2/collection_summary` only{% endblock %}
 
-{% block filters %}{% endblock %}
-{% block kpi_cards %}{% endblock %}
+{# Use the shared Disbursal-style filter panel from base.html (#}
+{# Base includes `dashboard/partials/_filters.html` by default #}
 
-{% block content %}
-<!-- Under Development Card -->
-<div class="flex items-center justify-center min-h-[60vh]">
-    <div class="bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-12 shadow-lg max-w-md w-full text-center">
-        <div class="mb-6">
-            <div class="w-20 h-20 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-                <svg class="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+{% block kpi_cards %}
+<!-- Collection Summary KPI Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
+    <!-- 1 -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Total Applications</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">{{ total_applications|default:"0"|intcomma }}</p>
             </div>
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Under Development</h3>
-            <p class="text-gray-600 dark:text-slate-400">This feature is currently being developed and will be available soon.</p>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">{{ fresh_total_applications|default:"0"|intcomma }}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">{{ reloan_total_applications|default:"0"|intcomma }}</span>
+            </span>
+        </div>
+    </div>
+    <!-- 2 -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Principal Amount</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ principal_amount|default:"0"|floatformat:0|intcomma }}</p>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_principal_amount|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_principal_amount|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+        </div>
+    </div>
+    <!-- 3 -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Net Disbursed</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ net_disbursal|default:"0"|floatformat:0|intcomma }}</p>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_net_disbursal|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_net_disbursal|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+        </div>
+    </div>
+    <!-- 4 -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Repayment Amount</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ repayment_amount|default:"0"|floatformat:0|intcomma }}</p>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_repayment_amount|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_repayment_amount|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+        </div>
+    </div>
+    <!-- 5 -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Collected Amount</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ collected_amount|default:"0"|floatformat:0|intcomma }}</p>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_collected_amount|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_collected_amount|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+        </div>
+    </div>
+    <!-- 6 -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Pending Collection</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ pending_collection|default:"0"|floatformat:0|intcomma }}</p>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_pending_collection|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_pending_collection|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+        </div>
+    </div>
+    <!-- 7 -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Principal Outstanding</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ pending_principal|default:"0"|floatformat:0|intcomma }}</p>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_pending_principal|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_pending_principal|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+        </div>
+    </div>
+    <!-- 8 -->
+    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="relative flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Principal Collection Excl. 90+ DPD</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ principal_collection_excl_90_dpd|default:"0"|floatformat:0|intcomma }}</p>
+            </div>
+        </div>
+        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_principal_collection_excl_90_dpd|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
+                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_principal_collection_excl_90_dpd|default:"0"|floatformat:0|intcomma }}</span>
+            </span>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {% if api_error %}
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-sm text-red-700 dark:text-red-200">
+            {{ api_error }}
+        </div>
+    {% endif %}
+
+    <!-- DPD Bucket Distribution -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">DPD Bucket Distribution</h2>
+        {% if dpd_bucket_distribution %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                    <thead class="bg-gray-50 dark:bg-slate-900">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">DPD Bucket</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Count</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                        {% for b in dpd_bucket_distribution %}
+                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">{{ b.dpd_bucket|default:"-" }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">{{ b.count|default:"0"|intcomma }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">₹{{ b.amount|default:"0"|floatformat:0|intcomma }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-600 dark:text-gray-400">No DPD bucket data available.</p>
+        {% endif %}
+    </div>
+
+    <!-- Amount Received Over Time -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Amount Received Over Time</h2>
+                <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">Repayment Amount, Net Disbursal and Count</p>
+            </div>
+        </div>
+        <div style="position: relative; height: 380px;">
+            <canvas id="amountReceivedChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Received Amount by State -->
+    <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg" style="background-color: rgba(16,185,129,0.12);">
+                    <svg class="w-5 h-5" style="color: rgb(16,185,129);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-1.5 tracking-tight" style="color: #00072D;">Received Amount by State</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Geographic distribution of collections</p>
+                </div>
+            </div>
+        </div>
+        <div class="relative h-80">
+            <canvas id="receivedStateChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Cities – Collection Rate (%) -->
+    <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg" style="background-color: rgba(99,102,241,0.12);">
+                    <svg class="w-5 h-5" style="color: rgb(99,102,241);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21V3m18 18H3m4-4v-6m4 6V7m4 10v-4m4 4V5" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-1.5 tracking-tight" style="color: #00072D;">Top Cities – Collection Rate (%)</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Color coded by performance bracket</p>
+                </div>
+            </div>
+        </div>
+        <div class="relative h-96">
+            <canvas id="topCitiesCollectionRateChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Pending Cases by Amount Bucket -->
+    <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg" style="background-color: rgba(249,115,22,0.12);">
+                    <svg class="w-5 h-5" style="color: rgb(249,115,22);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-1.5 tracking-tight" style="color: #00072D;">Pending Cases by Amount Bucket</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Pending cases grouped by repayment amount</p>
+                </div>
+            </div>
+        </div>
+        <div class="relative h-96">
+            <canvas id="pendingCasesBucketChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Collection Summary Data -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                Collection Summary Data
+            </h2>
+            <p class="text-xs text-gray-500 dark:text-slate-400">
+                Showing first {{ collection_data_preview_limit }} of {{ collection_data_total|default:"0"|intcomma }} rows
+            </p>
+        </div>
+
+        {% if collection_data_preview %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                    <thead class="bg-gray-50 dark:bg-slate-900">
+                        <tr>
+                            {% for key in collection_data_preview.0.keys %}
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ key|title }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                        {% for item in collection_data_preview %}
+                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700">
+                                {% for key, value in item.items %}
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">
+                                        {{ value|default:"-" }}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-600 dark:text-gray-400">No data available for the selected range.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+(function() {
+    const canvas = document.getElementById('amountReceivedChart');
+    if (!canvas) return;
+    const data = JSON.parse('{{ amount_received_over_time|escapejs }}');
+    if (!data || !data.dates || data.dates.length === 0) return;
+
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const labels = data.dates.map(d => {
+        const dt = new Date(d + 'T00:00:00');
+        return `${dt.getDate()} ${monthNames[dt.getMonth()]}`;
+    });
+    const isDark = document.documentElement.classList.contains('dark');
+
+    // eslint-disable-next-line no-undef
+    new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Repayment Amount', data: data.repayment_amounts || [], borderColor: 'rgb(249,115,22)', backgroundColor: 'rgba(249,115,22,0.08)', borderWidth: 2, tension: 0.35, yAxisID: 'y' },
+                { label: 'Net Disbursal', data: data.net_disbursal_amounts || [], borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.08)', borderWidth: 2, tension: 0.35, yAxisID: 'y' },
+                { label: 'Count', data: data.counts || [], borderColor: 'rgb(168,85,247)', backgroundColor: 'rgba(168,85,247,0.08)', borderWidth: 2, tension: 0.35, yAxisID: 'y1' },
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 },
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { labels: { color: isDark ? 'rgb(226,232,240)' : 'rgb(55,65,81)', usePointStyle: true } },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            const label = ctx.dataset.label || '';
+                            const v = ctx.parsed.y;
+                            if (ctx.dataset.yAxisID === 'y1') return `${label}: ${v.toLocaleString()}`;
+                            return `${label}: ₹${Math.round(v).toLocaleString('en-IN')}`;
+                        },
+                        afterBody: function(tooltipItems) {
+                            if (!tooltipItems || tooltipItems.length === 0) return '';
+                            const idx = tooltipItems[0].dataIndex;
+                            const collected = (data.collected_amounts && typeof data.collected_amounts[idx] !== 'undefined')
+                                ? data.collected_amounts[idx]
+                                : 0;
+                            const principal = (data.principal_amounts && typeof data.principal_amounts[idx] !== 'undefined')
+                                ? data.principal_amounts[idx]
+                                : 0;
+                            return [
+                                `Collected Amount: ₹${Math.round(collected).toLocaleString('en-IN')}`,
+                                `Principal Amount: ₹${Math.round(principal).toLocaleString('en-IN')}`,
+                            ];
+                        },
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: isDark ? 'rgb(148,163,184)' : 'rgb(107,114,128)', maxTicksLimit: labels.length > 50 ? 20 : 30 },
+                    grid: { color: isDark ? 'rgba(51,65,85,0.25)' : 'rgba(229,231,235,0.6)' }
+                },
+                y: {
+                    position: 'left',
+                    beginAtZero: true,
+                    ticks: { color: isDark ? 'rgb(148,163,184)' : 'rgb(107,114,128)' },
+                    grid: { color: isDark ? 'rgba(51,65,85,0.25)' : 'rgba(229,231,235,0.6)' }
+                },
+                y1: {
+                    position: 'right',
+                    beginAtZero: true,
+                    ticks: { color: isDark ? 'rgb(148,163,184)' : 'rgb(107,114,128)' },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+})();
+</script>
+
+<script>
+(function() {
+    const canvas = document.getElementById('receivedStateChart');
+    if (!canvas) return;
+    const receivedStateData = {
+        labels: JSON.parse('{{ received_state_labels|default:"[]"|escapejs }}'),
+        values: JSON.parse('{{ received_state_values|default:"[]"|escapejs }}'),
+        pending: JSON.parse('{{ pending_state_values|default:"[]"|escapejs }}'),
+    };
+    if (!receivedStateData.labels || receivedStateData.labels.length === 0) return;
+
+    const isDark = document.documentElement.classList.contains('dark');
+    const tooltipBg = isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+    const tooltipTitle = isDark ? '#f1f5f9' : '#111827';
+    const tooltipBody = isDark ? '#cbd5e1' : '#374151';
+    const tooltipBorder = isDark ? '#334155' : '#e5e7eb';
+
+    // eslint-disable-next-line no-undef
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: receivedStateData.labels,
+            datasets: [{
+                label: 'Received Amount',
+                data: receivedStateData.values,
+                backgroundColor: 'rgba(16,185,129,0.85)',
+                borderColor: 'rgba(5,150,105,1)',
+                borderWidth: 1,
+                borderRadius: 6,
+            },{
+                label: 'Pending Amount',
+                data: receivedStateData.pending || [],
+                backgroundColor: 'rgba(239,68,68,0.80)',
+                borderColor: 'rgba(220,38,38,1)',
+                borderWidth: 1,
+                borderRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { color: isDark ? 'rgb(226,232,240)' : 'rgb(55,65,81)', usePointStyle: true }
+                },
+                tooltip: {
+                    backgroundColor: tooltipBg,
+                    titleColor: tooltipTitle,
+                    bodyColor: tooltipBody,
+                    borderColor: tooltipBorder,
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: function(ctx) {
+                            const name = ctx.dataset && ctx.dataset.label ? ctx.dataset.label : 'Amount';
+                            return `${name}: ₹${Math.round(ctx.parsed.y).toLocaleString('en-IN')}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: isDark ? 'rgb(148,163,184)' : 'rgb(107,114,128)',
+                        callback: function(value) {
+                            return '₹' + (value / 1000).toFixed(0) + 'K';
+                        }
+                    },
+                    grid: { color: isDark ? 'rgba(51,65,85,0.25)' : 'rgba(229,231,235,0.6)' }
+                },
+                x: {
+                    ticks: {
+                        color: isDark ? 'rgb(148,163,184)' : 'rgb(107,114,128)',
+                        maxRotation: 45,
+                        minRotation: 45
+                    },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+})();
+</script>
+
+<script>
+(function() {
+    const canvas = document.getElementById('topCitiesCollectionRateChart');
+    if (!canvas) return;
+
+    const labels = JSON.parse('{{ top_city_rate_labels|default:"[]"|escapejs }}');
+    const values = JSON.parse('{{ top_city_rate_values|default:"[]"|escapejs }}');
+    const colors = JSON.parse('{{ top_city_rate_colors|default:"[]"|escapejs }}');
+    const collected = JSON.parse('{{ top_city_rate_collected|default:"[]"|escapejs }}');
+    const pending = JSON.parse('{{ top_city_rate_pending|default:"[]"|escapejs }}');
+    if (!labels || labels.length === 0) return;
+
+    const isDark = document.documentElement.classList.contains('dark');
+
+    // Custom plugin to draw % labels at the end of bars
+    const endLabelPlugin = {
+        id: 'endLabelPlugin',
+        afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            ctx.save();
+            ctx.font = '700 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial';
+            ctx.fillStyle = isDark ? '#f1f5f9' : '#111827';
+            const meta = chart.getDatasetMeta(0);
+            meta.data.forEach((bar, i) => {
+                const v = values[i];
+                const text = `${Number(v).toFixed(2)}%`;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, bar.x + 10, bar.y);
+            });
+            ctx.restore();
+        }
+    };
+
+    // eslint-disable-next-line no-undef
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Collection Rate (%)',
+                data: values,
+                backgroundColor: colors,
+                borderColor: colors,
+                borderWidth: 1,
+                borderRadius: 10,
+                barThickness: 28,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            animation: { duration: 0 },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                    titleColor: isDark ? '#f1f5f9' : '#111827',
+                    bodyColor: isDark ? '#cbd5e1' : '#374151',
+                    borderColor: isDark ? '#334155' : '#e5e7eb',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: function(ctx) {
+                            const i = ctx.dataIndex;
+                            const pct = values[i];
+                            const col = collected[i] || 0;
+                            const pen = pending[i] || 0;
+                            return [
+                                `Collection Rate: ${Number(pct).toFixed(2)}%`,
+                                `Collected: ₹${Math.round(col).toLocaleString('en-IN')}`,
+                                `Pending: ₹${Math.round(pen).toLocaleString('en-IN')}`,
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                        color: isDark ? 'rgb(148,163,184)' : 'rgb(107,114,128)',
+                        callback: function(v) { return `${v}%`; }
+                    },
+                    grid: { color: isDark ? 'rgba(51,65,85,0.25)' : 'rgba(229,231,235,0.6)' }
+                },
+                y: {
+                    ticks: { color: isDark ? 'rgb(226,232,240)' : 'rgb(55,65,81)', font: { weight: '700' } },
+                    grid: { display: false }
+                }
+            }
+        },
+        plugins: [endLabelPlugin]
+    });
+})();
+</script>
+
+<script>
+(function() {
+    const canvas = document.getElementById('pendingCasesBucketChart');
+    if (!canvas) return;
+
+    const labels = JSON.parse('{{ pending_bucket_labels|default:"[]"|escapejs }}');
+    const counts = JSON.parse('{{ pending_bucket_counts|default:"[]"|escapejs }}');
+    const amounts = JSON.parse('{{ pending_bucket_amounts|default:"[]"|escapejs }}');
+    if (!labels || labels.length === 0) return;
+
+    const isDark = document.documentElement.classList.contains('dark');
+
+    const barLabelPlugin = {
+        id: 'barLabelPlugin',
+        afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            const meta = chart.getDatasetMeta(1); // bar dataset is index 1 below
+            if (!meta || !meta.data) return;
+            ctx.save();
+            ctx.font = '700 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial';
+            ctx.fillStyle = isDark ? '#f1f5f9' : '#111827';
+            meta.data.forEach((bar, i) => {
+                const v = counts[i] || 0;
+                if (!v) return;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(String(v), bar.x, bar.y - 6);
+            });
+            ctx.restore();
+        }
+    };
+
+    // eslint-disable-next-line no-undef
+    new Chart(canvas.getContext('2d'), {
+        data: {
+            labels,
+            datasets: [
+                {
+                    type: 'line',
+                    label: 'Total Pending Amount (₹)',
+                    data: amounts,
+                    borderColor: 'rgb(59,130,246)',
+                    backgroundColor: 'rgba(59,130,246,0.08)',
+                    borderWidth: 3,
+                    tension: 0.35,
+                    pointRadius: 4,
+                    pointHoverRadius: 5,
+                    yAxisID: 'yAmount',
+                },
+                {
+                    type: 'bar',
+                    label: 'Number of Cases',
+                    data: counts,
+                    backgroundColor: 'rgba(249,115,22,0.65)',
+                    borderColor: 'rgba(249,115,22,1)',
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    yAxisID: 'yCases',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 },
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { labels: { color: isDark ? 'rgb(226,232,240)' : 'rgb(55,65,81)', usePointStyle: true } },
+                tooltip: {
+                    backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                    titleColor: isDark ? '#f1f5f9' : '#111827',
+                    bodyColor: isDark ? '#cbd5e1' : '#374151',
+                    borderColor: isDark ? '#334155' : '#e5e7eb',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: function(ctx) {
+                            if (ctx.dataset.yAxisID === 'yCases') {
+                                return `${ctx.dataset.label}: ${ctx.parsed.y}`;
+                            }
+                            return `${ctx.dataset.label}: ₹${Math.round(ctx.parsed.y).toLocaleString('en-IN')}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: isDark ? 'rgb(148,163,184)' : 'rgb(107,114,128)' },
+                    grid: { color: isDark ? 'rgba(51,65,85,0.25)' : 'rgba(229,231,235,0.6)' }
+                },
+                yCases: {
+                    position: 'left',
+                    beginAtZero: true,
+                    title: { display: true, text: 'Number of Cases', color: isDark ? 'rgb(226,232,240)' : 'rgb(55,65,81)' },
+                    ticks: { color: isDark ? 'rgb(148,163,184)' : 'rgb(107,114,128)' },
+                    grid: { color: isDark ? 'rgba(51,65,85,0.25)' : 'rgba(229,231,235,0.6)' }
+                },
+                yAmount: {
+                    position: 'right',
+                    beginAtZero: true,
+                    title: { display: true, text: 'Pending Amount (₹)', color: isDark ? 'rgb(226,232,240)' : 'rgb(55,65,81)' },
+                    ticks: {
+                        color: 'rgb(59,130,246)',
+                        callback: function(v) { return '₹' + (v / 1000).toFixed(0) + 'K'; }
+                    },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        },
+        plugins: [barLabelPlugin]
+    });
+})();
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Provide cities-by-state mapping for the shared filter panel city filtering logic.
+// Built server-side from collection_summary API response (still "collection_summary only").
+window.citiesByState = JSON.parse('{{ cities_by_state_json|default:"{}"|escapejs }}');
+</script>
 {% endblock %}
 

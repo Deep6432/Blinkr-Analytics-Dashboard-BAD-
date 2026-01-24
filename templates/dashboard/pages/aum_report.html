@@ -1,28 +1,354 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}AUM Report - Blinkr Analytics Dashboard{% endblock %}
 
 {% block page_title %}AUM Report{% endblock %}
-{% block page_subtitle %}{% endblock %}
+{% block page_subtitle %}Data from `api/collection/aum_static_data` only{% endblock %}
 
-{% block filters %}{% endblock %}
-{% block kpi_cards %}{% endblock %}
+{# Use the shared Disbursal-style filter panel from base.html #}
+{# Base includes `dashboard/partials/_filters.html` by default #}
+
+{% block kpi_cards %}
+{# No KPI cards for AUM Report yet - can be added later if needed #}
+{% endblock %}
 
 {% block content %}
-<!-- Under Development Card -->
-<div class="flex items-center justify-center min-h-[60vh]">
-    <div class="bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-12 shadow-lg max-w-md w-full text-center">
-        <div class="mb-6">
-            <div class="w-20 h-20 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-                <svg class="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Under Development</h3>
-            <p class="text-gray-600 dark:text-slate-400">This feature is currently being developed and will be available soon.</p>
+<div class="space-y-6">
+    {% if api_error %}
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-sm text-red-700 dark:text-red-200">
+            <strong>API Error:</strong> {{ api_error }}
+        </div>
+    {% endif %}
+
+    <!-- AUM Report Table -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full border-collapse" style="font-size: 12px;">
+                <!-- Title Row -->
+                <thead>
+                    <tr>
+                        <th colspan="{{ sorted_months|length|add:1|add:sorted_months|length }}" class="bg-green-700 text-white text-center font-bold py-3 px-4" style="background-color: #2d5016;">
+                            AUM REPORT
+                        </th>
+                    </tr>
+                </thead>
+                
+                <!-- Header Row 1: Category + Months -->
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="bg-blue-700 text-white font-semibold py-2 px-4 text-left border border-gray-300 dark:border-slate-600" style="background-color: #1e3a8a;">Category</th>
+                        {% for month in sorted_months %}
+                            <th colspan="2" class="bg-blue-700 text-white font-semibold py-2 px-3 text-center border border-gray-300 dark:border-slate-600" style="background-color: #1e3a8a;">{{ month|upper }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                
+                <!-- Header Row 2: Units + Sum for each month -->
+                <thead>
+                    <tr>
+                        <th class="bg-blue-700 text-white font-semibold py-2 px-4 text-left border border-gray-300 dark:border-slate-600" style="background-color: #1e3a8a;"></th>
+                        {% for month in sorted_months %}
+                            <th class="bg-blue-700 text-white font-semibold py-2 px-3 text-center border border-gray-300 dark:border-slate-600" style="background-color: #1e3a8a;">Units</th>
+                            <th class="bg-blue-700 text-white font-semibold py-2 px-3 text-center border border-gray-300 dark:border-slate-600" style="background-color: #1e3a8a;">Sum</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                
+                <tbody>
+                    {% if monthly_data_list and sorted_months and sorted_months|length > 0 %}
+                        <!-- STPL (SHORT TERM PERSONAL LOAN) -->
+                        <tr class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">STPL (SHORT TERM PERSONAL LOAN)</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.stpl_units|default:0|intcomma }}</td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.stpl_sum|default:0|floatformat:0|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Loan Disbursed - FRESH -->
+                        <tr class="bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">Loan Disbursed - FRESH</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.loan_disbursed_fresh_units|default:0|intcomma }}</td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.loan_disbursed_fresh_sum|default:0|floatformat:0|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Loan Disbursed - REPEAT -->
+                        <tr class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">Loan Disbursed - REPEAT</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.loan_disbursed_repeat_units|default:0|intcomma }}</td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.loan_disbursed_repeat_sum|default:0|floatformat:0|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Loan Disbursed - Total -->
+                        <tr class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">Loan Disbursed - Total</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.loan_disbursed_total_units|default:0|intcomma }}</td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.loan_disbursed_total_sum|default:0|floatformat:0|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Running Cases -->
+                        <tr class="bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">Running Cases</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.running_cases_units|default:0|intcomma }}</td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.running_cases_sum|default:0|floatformat:0|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Over Due +1-30 Day -->
+                        <tr class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">Over Due +1-30 Day</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.overdue_1_30_units|default:0|intcomma }}</td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.overdue_1_30_sum|default:0|floatformat:0|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Over Due +31-90 Day -->
+                        <tr class="bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">Over Due +31-90 Day</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.overdue_31_90_units|default:0|intcomma }}</td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.overdue_31_90_sum|default:0|floatformat:0|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Over Due 90+ Day -->
+                        <tr class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">Over Due 90+ Day</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.overdue_90_plus_units|default:0|intcomma }}</td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.overdue_90_plus_sum|default:0|floatformat:0|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Loan Book(AUM) - Highlighted in Yellow -->
+                        <tr class="bg-yellow-200 dark:bg-yellow-900/30 hover:bg-yellow-300 dark:hover:bg-yellow-900/40" style="background-color: #fef08a;">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-bold text-gray-900 dark:text-white">Loan Book(AUM)</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right font-semibold text-gray-900 dark:text-white">{{ data.loan_book_aum_units|default:0|intcomma }}</td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right font-semibold text-gray-900 dark:text-white">{{ data.loan_book_aum_sum|default:0|floatformat:0|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Loan Book(AUM) - FRESH -->
+                        <tr class="bg-yellow-100 dark:bg-yellow-900/20 hover:bg-yellow-200 dark:hover:bg-yellow-900/30" style="background-color: #fef9c3;">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 pl-8 font-medium text-gray-900 dark:text-white">Loan Book(AUM) - FRESH</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.loan_book_aum_fresh_units|default:0|intcomma }}</td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.loan_book_aum_fresh_sum|default:0|floatformat:0|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Loan Book(AUM) - RELOAN -->
+                        <tr class="bg-yellow-100 dark:bg-yellow-900/20 hover:bg-yellow-200 dark:hover:bg-yellow-900/30" style="background-color: #fef9c3;">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 pl-8 font-medium text-gray-900 dark:text-white">Loan Book(AUM) - RELOAN</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.loan_book_aum_reloan_units|default:0|intcomma }}</td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.loan_book_aum_reloan_sum|default:0|floatformat:0|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- ATS (spans both Units and Sum) -->
+                        <tr class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">ATS</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td colspan="2" class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.ats|default:0|floatformat:2|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- 1+DPD% -->
+                        <tr class="bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">1+DPD%</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td colspan="2" class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.dpd_1_plus|default:0|floatformat:2 }}%</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- 30+DPD% -->
+                        <tr class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">30+DPD%</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td colspan="2" class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.dpd_30_plus|default:0|floatformat:2 }}%</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- 90+DPD% -->
+                        <tr class="bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">90+DPD%</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td colspan="2" class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.dpd_90_plus|default:0|floatformat:2 }}%</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- PF Income (Incl. GST) -->
+                        <tr class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">PF Income (Incl. GST)</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td colspan="2" class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.pf_income|default:0|floatformat:2|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Interest Income -->
+                        <tr class="bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">Interest Income</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td colspan="2" class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.interest_income|default:0|floatformat:2|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Avg PF (Incl. GST) -->
+                        <tr class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">Avg PF (Incl. GST)</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td colspan="2" class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.avg_pf|default:0|floatformat:2|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Avg ROI -->
+                        <tr class="bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">Avg ROI</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td colspan="2" class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.avg_roi|default:0|floatformat:2 }}%</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Avg Tenure -->
+                        <tr class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-medium text-gray-900 dark:text-white">Avg Tenure</td>
+                            {% for month_item in monthly_data_list %}
+                                {% with data=month_item.data %}
+                                    <td colspan="2" class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right text-gray-900 dark:text-white">{{ data.avg_tenure|default:0|floatformat:2|intcomma }}</td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- Total Loan Book AUM - Highlighted in Yellow -->
+                        <tr class="bg-yellow-200 dark:bg-yellow-900/30 hover:bg-yellow-300 dark:hover:bg-yellow-900/40" style="background-color: #fef08a;">
+                            <td class="border border-gray-300 dark:border-slate-600 px-4 py-2 font-bold text-gray-900 dark:text-white">Total Loan Book AUM</td>
+                            {% for month_item in monthly_data_list %}
+                                {% if forloop.last %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2"></td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2 text-right font-bold text-gray-900 dark:text-white">{{ total_loan_book_aum|default:0|floatformat:0|intcomma }}</td>
+                                {% else %}
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2"></td>
+                                    <td class="border border-gray-300 dark:border-slate-600 px-3 py-2"></td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="20" class="border border-gray-300 dark:border-slate-600 px-4 py-8 text-center text-gray-600 dark:text-gray-400">
+                                {% if api_error %}
+                                    <div class="text-red-600 dark:text-red-400 font-semibold mb-2">API Error: {{ api_error }}</div>
+                                {% endif %}
+                                <div>No monthly data available for the selected range.</div>
+                                {% if aum_data_total > 0 %}
+                                    <div class="text-xs mt-2 text-gray-500">Total rows received: {{ aum_data_total|intcomma }}</div>
+                                    <div class="text-xs text-gray-500">Check server console for data structure details.</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
     </div>
+    
+    <!-- Fallback: Show Raw Data if Monthly Processing Failed -->
+    {% if aum_data_preview and aum_data_preview|length > 0 and not monthly_data_list %}
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    Raw AUM Data (Monthly processing unavailable)
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-slate-400">
+                    Showing first {{ aum_data_preview_limit }} of {{ aum_data_total|default:"0"|intcomma }} rows
+                </p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                    <thead class="bg-gray-50 dark:bg-slate-900">
+                        <tr>
+                            {% for key in aum_data_preview.0.keys %}
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ key|title }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                        {% for item in aum_data_preview %}
+                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700">
+                                {% for key, value in item.items %}
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">
+                                        {% if value is None %}
+                                            -
+                                        {% elif value|floatformat:0 == value|floatformat:2 %}
+                                            {{ value|floatformat:0|intcomma }}
+                                        {% else %}
+                                            {{ value|floatformat:2|intcomma }}
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
 
+{% block extra_scripts %}
+<script>
+// Provide cities-by-state mapping for the shared filter panel city filtering logic.
+// Built server-side from aum_static_data API response (still "aum_static_data only").
+window.citiesByState = JSON.parse('{{ cities_by_state_json|default:"{}"|escapejs }}');
+</script>
+{% endblock %}

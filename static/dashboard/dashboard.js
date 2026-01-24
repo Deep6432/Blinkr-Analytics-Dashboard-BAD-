@@ -14,14 +14,27 @@
         countdownSeconds: 10,
         isPaused: false,
         charts: {},
+
+        /**
+         * Only Disbursal Summary supports the global auto-refresh endpoint (/api/disbursal-data/).
+         * Other pages (e.g. Collection Summary) must not call it, otherwise failures can trigger reload loops.
+         */
+        supportsDisbursalAutoRefresh: function() {
+            // Disbursal Summary page uniquely has these charts
+            return !!document.getElementById('stateChart') ||
+                   !!document.getElementById('cityChart') ||
+                   !!document.getElementById('sourceChart');
+        },
         
         init: function() {
-            // Set default refresh interval to 10 seconds if not set
-            if (!localStorage.getItem('dashboard-refresh-interval')) {
-                localStorage.setItem('dashboard-refresh-interval', '10');
-                this.refreshInterval = 10;
+            // Normalize refresh interval (avoid invalid values like "1" causing every-second refresh)
+            const allowedIntervals = [0, 10, 30, 60];
+            const stored = parseInt(localStorage.getItem('dashboard-refresh-interval') || '10', 10);
+            if (allowedIntervals.includes(stored)) {
+                this.refreshInterval = stored;
             } else {
-                this.refreshInterval = parseInt(localStorage.getItem('dashboard-refresh-interval'), 10) || 10;
+                this.refreshInterval = 10;
+                localStorage.setItem('dashboard-refresh-interval', '10');
             }
             
             this.setupRefreshControls();
@@ -29,12 +42,11 @@
             this.setupHTMX();
             this.updateLastUpdated();
             
-            // OPTIMIZATION: Immediately fetch collection metrics via AJAX on page load
-            // This allows the page to render quickly while collection data loads in background
-            console.log('⚡ Loading collection metrics in background...');
-            setTimeout(() => {
-                this.refreshData();
-            }, 100); // Small delay to ensure page is fully rendered
+            // Only Disbursal Summary should auto-refresh via /api/disbursal-data/
+            if (this.supportsDisbursalAutoRefresh() && this.refreshInterval > 0 && !this.isPaused) {
+                console.log('⚡ Loading dashboard metrics in background...');
+                setTimeout(() => this.refreshData(), 100);
+            }
         },
         
         /**
@@ -44,6 +56,29 @@
             const intervalSelect = document.getElementById('refresh-interval-select');
             const pauseBtn = document.getElementById('pause-refresh-btn');
             const intervalDisplay = document.getElementById('refresh-interval-display');
+
+            // Auto-refresh endpoint is only valid on Disbursal Summary.
+            // Prevent other pages from triggering refresh requests/reload loops.
+            if (!this.supportsDisbursalAutoRefresh()) {
+                this.isPaused = true;
+                this.refreshInterval = 0;
+                this.stopRefreshTimer();
+                this.updateCountdownDisplay();
+
+                if (intervalSelect) {
+                    intervalSelect.value = '0';
+                    intervalSelect.disabled = true;
+                    intervalSelect.title = 'Auto-refresh is available on Disbursal Summary only';
+                }
+                if (pauseBtn) {
+                    pauseBtn.disabled = true;
+                    pauseBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    pauseBtn.title = 'Auto-refresh is available on Disbursal Summary only';
+                }
+
+                this.updateIntervalDisplay(intervalDisplay);
+                return;
+            }
             
             // Set the select value and display
             if (intervalSelect) {
@@ -193,6 +228,7 @@
          * Refresh dashboard data via API call (no page reload)
          */
         refreshData: function() {
+            if (!this.supportsDisbursalAutoRefresh()) return;
             console.log('Refreshing dashboard data via API...');
             
             // Get current URL parameters (filters)
@@ -258,13 +294,22 @@
                 this.updateLastUpdated();
             })
             .catch(error => {
-                console.error('Error refreshing data:', error);
-                // Fallback to page reload if API fails
-                console.log('Falling back to page reload...');
-                const url = new URL(window.location.href);
-                url.searchParams.set('_refresh', Date.now().toString());
-                window.location.href = url.toString();
+                this.handleRefreshError(error);
             });
+        },
+
+        /**
+         * Handle refresh errors safely (NO full page reload).
+         * Reload fallback caused infinite reload loops when the API endpoint failed.
+         */
+        handleRefreshError: function(error) {
+            console.error('Error refreshing data:', error);
+            // Pause auto-refresh to avoid repeated failing requests
+            this.isPaused = true;
+            this.refreshInterval = 0;
+            localStorage.setItem('dashboard-refresh-interval', '0');
+            this.stopRefreshTimer();
+            this.updateCountdownDisplay();
         },
         
         /**
@@ -871,9 +916,30 @@
             window.toggleMobileSidebar = function() {
                 const sidebar = document.getElementById('mobile-sidebar');
                 if (sidebar) {
+                    // Toggle the hidden class
                     sidebar.classList.toggle('hidden');
+                    
+                    // Prevent body scroll when sidebar is open
+                    if (!sidebar.classList.contains('hidden')) {
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        document.body.style.overflow = '';
+                    }
                 }
             };
+            
+            // Close sidebar when clicking outside (on the backdrop)
+            document.addEventListener('click', function(event) {
+                const sidebar = document.getElementById('mobile-sidebar');
+                const backdrop = sidebar ? sidebar.querySelector('.fixed.inset-0.bg-black\\/50') : null;
+                
+                if (sidebar && !sidebar.classList.contains('hidden')) {
+                    // If clicking on the backdrop, close the sidebar
+                    if (backdrop && event.target === backdrop) {
+                        window.toggleMobileSidebar();
+                    }
+                }
+            });
         },
         
         /**
