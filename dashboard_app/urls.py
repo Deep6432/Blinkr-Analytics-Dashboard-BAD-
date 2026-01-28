@@ -21,5 +21,6 @@ urlpatterns = [
     path('daily-performance-metrics/', views.daily_performance_metrics, name='daily_performance_metrics'),
     path('credit-person-wise/', views.credit_person_wise, name='credit_person_wise'),
     path('aum-report/', views.aum_report, name='aum_report'),
+    path('api/aum-report/', views.api_aum_report, name='api_aum_report'),
 ]
 

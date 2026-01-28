@@ -2227,17 +2227,21 @@ def collection_without_fraud(request):
     ist = pytz.timezone('Asia/Kolkata')
     today_date = datetime.now(ist).date()
 
+    # Default range: from 1st June 2025 to today
+    default_start_date = date(2025, 6, 1)
+    default_end_date = today_date
+
     date_from_str = request.GET.get('date_from') or ''
     date_to_str = request.GET.get('date_to') or ''
 
     try:
-        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else today_date
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else default_start_date
     except ValueError:
-        date_from = today_date
+        date_from = default_start_date
     try:
-        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else today_date
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else default_end_date
     except ValueError:
-        date_to = today_date
+        date_to = default_end_date
 
     if date_from > date_to:
         date_from, date_to = date_to, date_from
@@ -2296,11 +2300,14 @@ def collection_without_fraud(request):
 
             if isinstance(candidate, list):
                 rows = candidate
+                print(f"[Collection Summary] API returned {len(rows)} rows")
             elif isinstance(candidate, dict):
                 # If dict is actually a single row
                 rows = [candidate]
+                print(f"[Collection Summary] API returned 1 row (dict)")
             else:
                 rows = []
+                print(f"[Collection Summary] API returned unexpected format: {type(candidate)}")
     except requests.RequestException as e:
         api_error = f"collection_summary API request failed: {e}"
         rows = []
@@ -2412,8 +2419,14 @@ def collection_without_fraud(request):
             elif date_from <= row_date <= date_to:
                 filtered_rows.append(r)
         
+        rows_before_date_filter = len(rows)
         rows = filtered_rows
-        print(f"[Collection Summary] Filtered by {date_type} date ({date_from} to {date_to}): {len(rows)} rows remaining")
+        rows_after_date_filter = len(rows)
+        print(f"[Collection Summary] Date filtering: {rows_before_date_filter} rows before, {rows_after_date_filter} rows after filtering by {date_type} date ({date_from} to {date_to})")
+        
+        # Count how many rows have loan_no
+        rows_with_loan_no = sum(1 for r in rows if isinstance(r, dict) and (r.get('loan_no') or r.get('loanNo') or r.get('loan_number')))
+        print(f"[Collection Summary] Rows with loan_no field: {rows_with_loan_no} out of {rows_after_date_filter} total rows")
 
     # --- Aggregations / dropdown options ---
     def to_float(v):
@@ -2679,16 +2692,41 @@ def collection_without_fraud(request):
                 return to_float(r.get(key))
         return 0.0
 
+    rows_processed = 0
+    rows_with_loan_no_count = 0
+    rows_without_loan_no_count = 0
+    
     for r in rows:
         if not isinstance(r, dict):
             continue
-
-        loan_no = r.get('loan_no') or r.get('loanNo') or r.get('loan_number')
+        
+        rows_processed += 1
+        loan_no = r.get('loan_no') or r.get('loanNo') or r.get('loan_number') or r.get('loanNumber') or r.get('loan_id') or r.get('loanId')
+        
+        # If no loan_no, try to use id as fallback for counting
+        row_id = None
+        if not loan_no:
+            row_id = r.get('id') or r.get('_id') or r.get('record_id')
+        
         if loan_no:
             loan_nos.add(_norm(loan_no))
+            rows_with_loan_no_count += 1
+        elif row_id:
+            rows_without_loan_no_count += 1
+            # Use a prefixed identifier to avoid conflicts with actual loan_nos
+            loan_nos.add(f'_row_{_norm(str(row_id))}')
+        else:
+            rows_without_loan_no_count += 1
+            # Last resort: use row index (but this might cause duplicates if same row appears twice)
+            # Actually, let's skip rows without any identifier to avoid double counting
+            continue
+        
         reloan_flag = is_reloan_row(r)
         if loan_no:
             (reloan_loan_nos if reloan_flag else fresh_loan_nos).add(_norm(loan_no))
+        elif row_id:
+            # Also add to fresh/reloan sets using row_id
+            (reloan_loan_nos if reloan_flag else fresh_loan_nos).add(f'_row_{_norm(str(row_id))}')
 
         principal_v = to_float(r.get('loan_amount') or r.get('principal_amount'))
         net_v = to_float(r.get('net_disbursal') or r.get('net_disbursed') or r.get('netDisbursal') or r.get('netDisbursed'))
@@ -2782,6 +2820,52 @@ def collection_without_fraud(request):
     total_applications = len(loan_nos)
     fresh_total_applications = len(fresh_loan_nos)
     reloan_total_applications = len(reloan_loan_nos)
+    
+    print(f"[Collection Summary] ========== TOTAL APPLICATIONS COUNT DEBUG ==========")
+    print(f"[Collection Summary] Rows processed: {rows_processed}")
+    print(f"[Collection Summary] Rows with loan_no: {rows_with_loan_no_count}")
+    print(f"[Collection Summary] Rows without loan_no (using id fallback): {rows_without_loan_no_count}")
+    print(f"[Collection Summary] Total unique loan_nos found: {total_applications}")
+    print(f"[Collection Summary] Fresh loan_nos: {fresh_total_applications}, Reloan loan_nos: {reloan_total_applications}")
+    print(f"[Collection Summary] Sum of Fresh + Reloan: {fresh_total_applications + reloan_total_applications}")
+    print(f"[Collection Summary] Expected: 4395, Actual: {total_applications}, Difference: {4395 - total_applications}")
+    
+    # Debug: Check sample rows for loan_no field variations
+    if rows_processed > 0:
+        sample_with_loan = None
+        sample_without_loan = None
+        for r in rows[:20]:
+            if not isinstance(r, dict):
+                continue
+            loan_no = r.get('loan_no') or r.get('loanNo') or r.get('loan_number') or r.get('loanNumber')
+            if loan_no and sample_with_loan is None:
+                sample_with_loan = r
+            if not loan_no and sample_without_loan is None:
+                sample_without_loan = r
+            if sample_with_loan and sample_without_loan:
+                break
+        
+        if sample_with_loan:
+            print(f"[Collection Summary] Sample row WITH loan_no - keys: {list(sample_with_loan.keys())[:20]}")
+        if sample_without_loan:
+            print(f"[Collection Summary] Sample row WITHOUT loan_no - keys: {list(sample_without_loan.keys())[:20]}")
+            print(f"[Collection Summary] Sample row WITHOUT loan_no - all fields: {dict(list(sample_without_loan.items())[:15])}")
+    
+    print(f"[Collection Summary] ========== END COUNT DEBUG ==========")
+
+    # Calculate Collection % (Collected Amount / Repayment Amount * 100)
+    collection_percentage = 0.0
+    if repayment_amount > 0:
+        collection_percentage = (collected_amount / repayment_amount) * 100
+    
+    # Calculate Fresh and Reloan Collection %
+    fresh_collection_percentage = 0.0
+    if fresh_repayment_amount > 0:
+        fresh_collection_percentage = (fresh_collected_amount / fresh_repayment_amount) * 100
+    
+    reloan_collection_percentage = 0.0
+    if reloan_repayment_amount > 0:
+        reloan_collection_percentage = (reloan_collected_amount / reloan_repayment_amount) * 100
 
     dpd_bucket_distribution = [
         {'dpd_bucket': b, 'count': v['count'], 'amount': v['amount']}
@@ -2959,6 +3043,7 @@ def collection_without_fraud(request):
         'net_disbursal': net_disbursal,
         'repayment_amount': repayment_amount,
         'collected_amount': collected_amount,
+        'collection_percentage': collection_percentage,
         'pending_collection': pending_collection,
         'pending_principal': pending_principal,
         'principal_collection_excl_90_dpd': principal_collection_excl_90,
@@ -2973,7 +3058,9 @@ def collection_without_fraud(request):
         'fresh_repayment_amount': fresh_repayment_amount,
         'reloan_repayment_amount': reloan_repayment_amount,
         'fresh_collected_amount': fresh_collected_amount,
+        'fresh_collection_percentage': fresh_collection_percentage,
         'reloan_collected_amount': reloan_collected_amount,
+        'reloan_collection_percentage': reloan_collection_percentage,
         'fresh_pending_collection': fresh_pending_collection,
         'reloan_pending_collection': reloan_pending_collection,
         'fresh_pending_principal': fresh_pending_principal,
@@ -3035,10 +3122,84 @@ def credit_person_wise(request):
 
 @login_required
 @never_cache
+def api_aum_report(request):
+    """
+    API endpoint for AUM Report data using aum_static_data and aum_dpd_report APIs.
+    Returns combined data from both APIs merged by month.
+    """
+    try:
+        # Get authentication token from session
+        auth_token = request.session.get('blinkr_token') or request.session.get('auth_token')
+        if not auth_token:
+            api_key = os.environ.get('BLINKR_API_KEY') or getattr(settings, 'BLINKR_API_KEY', None)
+            if not api_key:
+                return JsonResponse({'error': 'Authentication required'}, status=401)
+            auth_token = api_key
+        
+        # Get startDate and endDate from query parameters
+        start_date = request.GET.get('startDate', '')
+        end_date = request.GET.get('endDate', '')
+        
+        if not start_date or not end_date:
+            return JsonResponse({'error': 'startDate and endDate parameters are required'}, status=400)
+        
+        # Build URLs for both APIs
+        aum_static_url = f'https://backend.blinkrloan.com/api/collection/aum_static_data?startDate={start_date}&endDate={end_date}'
+        aum_dpd_url = f'https://backend.blinkrloan.com/api/collection/aum_dpd_report?startDate={start_date}&endDate={end_date}'
+        
+        # Prepare headers with authentication token
+        headers = {
+            'Authorization': f'Bearer {auth_token}',
+            'Content-Type': 'application/json'
+        }
+        
+        # Fetch data from both APIs with authentication
+        static_response = requests.get(aum_static_url, headers=headers, timeout=30)
+        static_response.raise_for_status()
+        static_data = static_response.json()
+        
+        dpd_response = requests.get(aum_dpd_url, headers=headers, timeout=30)
+        dpd_response.raise_for_status()
+        dpd_data = dpd_response.json()
+        
+        # Combine the data from both APIs
+        return JsonResponse({
+            'static_data': static_data,
+            'dpd_data': dpd_data,
+            'start_date': start_date,
+            'end_date': end_date
+        })
+        
+    except requests.exceptions.HTTPError as e:
+        error_msg = f'HTTP error from external API: {e.response.status_code}'
+        try:
+            error_data = e.response.json()
+            error_msg = error_data.get('message', error_msg)
+        except:
+            pass
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error fetching AUM report data from external API: {error_msg}", exc_info=True)
+        return JsonResponse({'error': error_msg}, status=e.response.status_code)
+    except requests.exceptions.RequestException as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error fetching AUM report data from external API: {e}", exc_info=True)
+        return JsonResponse({'error': f'Failed to fetch data from external API: {str(e)}'}, status=500)
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error processing AUM report: {e}", exc_info=True)
+        return JsonResponse({'error': f'Failed to process data: {str(e)}'}, status=500)
+
+
+@login_required
+@never_cache
 def aum_report(request):
     """
     AUM Report page view.
-    IMPORTANT: This page uses ONLY api/collection/aum_static_data (no other APIs).
+    Uses BOTH api/collection/aum_static_data AND api/collection/aum_dpd_report APIs.
+    Merges data by matching months and maps fields according to documentation.
     """
     # --- Parse filters ---
     ist = pytz.timezone('Asia/Kolkata')
@@ -3062,14 +3223,15 @@ def aum_report(request):
     state_filters = [s.strip() for s in request.GET.getlist('state') if str(s).strip()]
     city_filters = [c.strip() for c in request.GET.getlist('city') if str(c).strip()]
 
-    # --- Fetch ONLY aum_static_data API ---
-    api_url = 'https://backend.blinkrloan.com/api/collection/aum_static_data'
+    # --- Fetch from BOTH APIs ---
+    static_api_url = 'https://backend.blinkrloan.com/api/collection/aum_static_data'
+    dpd_api_url = 'https://backend.blinkrloan.com/api/collection/aum_dpd_report'
 
     params = [
         ('startDate', date_from.strftime('%Y-%m-%d')),
         ('endDate', date_to.strftime('%Y-%m-%d')),
     ]
-    # Pass optional filters if API supports them (safe; we also filter server-side below)
+    # Pass optional filters if API supports them
     for s in state_filters:
         params.append(('state', s))
     for c in city_filters:
@@ -3084,87 +3246,137 @@ def aum_report(request):
         if api_key:
             headers['Authorization'] = f'Bearer {api_key}'
 
-    rows = []
+    static_rows = []
+    dpd_rows = []
     api_error = None
+    
+    # Fetch static data
     try:
-        print(f"[AUM Report] Fetching from: {api_url}")
-        print(f"[AUM Report] Params: {params}")
-        resp = requests.get(api_url, params=params, headers=headers, timeout=30)
-        print(f"[AUM Report] Response status: {resp.status_code}")
+        print(f"[AUM Report] Fetching static data from: {static_api_url}")
+        resp = requests.get(static_api_url, params=params, headers=headers, timeout=30)
+        print(f"[AUM Report] Static data response status: {resp.status_code}")
         
         if resp.status_code != 200:
             api_error = f"aum_static_data API returned {resp.status_code}: {resp.text[:200]}"
-            print(f"[AUM Report] API Error: {api_error}")
+            print(f"[AUM Report] Static API Error: {api_error}")
         else:
             api_data = resp.json()
-            print(f"[AUM Report] Response type: {type(api_data)}")
-            print(f"[AUM Report] Response keys (if dict): {list(api_data.keys()) if isinstance(api_data, dict) else 'N/A (not a dict)'}")
-            
             # Handle common wrappers
             if isinstance(api_data, dict):
-                candidate = None
-                for key in ('data', 'result', 'aum_static_data', 'aum_dpd_report', 'items', 'records', 'aum', 'dpd_report', 'response'):
+                for key in ('data', 'result', 'aum_static_data', 'items', 'records', 'aum', 'response'):
                     if key in api_data:
-                        candidate = api_data[key]
-                        print(f"[AUM Report] Found data under key: {key}")
+                        static_rows = api_data[key] if isinstance(api_data[key], list) else [api_data[key]]
+                        print(f"[AUM Report] Found static data under key: {key}, rows: {len(static_rows)}")
                         break
-                if candidate is None:
-                    # Check if the dict itself looks like a list of rows (unlikely but possible)
-                    candidate = api_data
-                    print(f"[AUM Report] Using entire dict as candidate")
-            else:
-                candidate = api_data
-                print(f"[AUM Report] Response is not a dict, using directly")
-
-            if isinstance(candidate, list):
-                rows = candidate
-                print(f"[AUM Report] ✓ Found {len(rows)} rows in list")
-                if rows and len(rows) > 0:
-                    print(f"[AUM Report] Sample row keys: {list(rows[0].keys()) if isinstance(rows[0], dict) else 'Not a dict'}")
-                    if isinstance(rows[0], dict):
-                        print(f"[AUM Report] Sample row (first 2000 chars): {str(rows[0])[:2000]}")
-                        # Print all keys and their types
-                        for key, value in list(rows[0].items())[:20]:  # First 20 fields
-                            print(f"[AUM Report]   {key}: {type(value).__name__} = {str(value)[:100]}")
-            elif isinstance(candidate, dict):
-                # If dict is actually a single row
-                rows = [candidate]
-                print(f"[AUM Report] ✓ Treated dict as single row")
-            else:
-                rows = []
-                print(f"[AUM Report] ⚠ Candidate is neither list nor dict: {type(candidate)}")
-    except requests.RequestException as e:
-        api_error = f"aum_static_data API request failed: {e}"
-        print(f"[AUM Report] RequestException: {api_error}")
-        rows = []
+                if not static_rows and isinstance(api_data, dict):
+                    static_rows = [api_data]
+            elif isinstance(api_data, list):
+                static_rows = api_data
+                print(f"[AUM Report] ✓ Found {len(static_rows)} static rows")
     except Exception as e:
-        api_error = f"aum_static_data unexpected error: {e}"
-        print(f"[AUM Report] Exception: {api_error}")
-        import traceback
-        traceback.print_exc()
-        rows = []
+        api_error = f"aum_static_data API request failed: {e}"
+        print(f"[AUM Report] Static API Exception: {api_error}")
+    
+    # Fetch DPD data
+    try:
+        print(f"[AUM Report] Fetching DPD data from: {dpd_api_url}")
+        resp = requests.get(dpd_api_url, params=params, headers=headers, timeout=30)
+        print(f"[AUM Report] DPD data response status: {resp.status_code}")
+        
+        if resp.status_code != 200:
+            if not api_error:
+                api_error = f"aum_dpd_report API returned {resp.status_code}: {resp.text[:200]}"
+            print(f"[AUM Report] DPD API Error: {api_error}")
+        else:
+            api_data = resp.json()
+            # Handle common wrappers
+            if isinstance(api_data, dict):
+                for key in ('data', 'result', 'aum_dpd_report', 'items', 'records', 'dpd_report', 'response'):
+                    if key in api_data:
+                        dpd_rows = api_data[key] if isinstance(api_data[key], list) else [api_data[key]]
+                        print(f"[AUM Report] Found DPD data under key: {key}, rows: {len(dpd_rows)}")
+                        break
+                if not dpd_rows and isinstance(api_data, dict):
+                    dpd_rows = [api_data]
+            elif isinstance(api_data, list):
+                dpd_rows = api_data
+                print(f"[AUM Report] ✓ Found {len(dpd_rows)} DPD rows")
+    except Exception as e:
+        if not api_error:
+            api_error = f"aum_dpd_report API request failed: {e}"
+        print(f"[AUM Report] DPD API Exception: {api_error}")
 
-    # --- Server-side filtering (still ONLY from this API response) ---
+    # --- Merge static and DPD data by matching months ---
+    def normalize_month(month_str):
+        """Normalize month string to 'Jun-25' format."""
+        if not month_str:
+            return None
+        month_str = str(month_str).strip()
+        # Try to parse various formats
+        formats = [
+            '%b %Y',  # Jun 2025
+            '%b-%y',  # Jun-25
+            '%Y-%m',  # 2025-06
+            '%m/%Y',  # 06/2025
+        ]
+        for fmt in formats:
+            try:
+                dt = datetime.strptime(month_str, fmt)
+                return dt.strftime('%b-%y')  # Return as Jun-25
+            except:
+                continue
+        return month_str  # Return as-is if can't parse
+    
+    # Create a merged data structure by month
+    merged_by_month = {}
+    
+    # Process static data
+    for row in static_rows:
+        if not isinstance(row, dict):
+            continue
+        month_key = normalize_month(row.get('disbursement_month') or row.get('disbursal_month'))
+        if not month_key:
+            continue
+        if month_key not in merged_by_month:
+            merged_by_month[month_key] = {}
+        merged_by_month[month_key].update(row)
+    
+    # Process DPD data and merge by month
+    for row in dpd_rows:
+        if not isinstance(row, dict):
+            continue
+        month_key = normalize_month(row.get('disbursal_month') or row.get('disbursement_month'))
+        if not month_key:
+            continue
+        if month_key not in merged_by_month:
+            merged_by_month[month_key] = {}
+        merged_by_month[month_key].update(row)
+    
+    print(f"[AUM Report] Merged {len(merged_by_month)} months from both APIs")
+    
+    # --- Server-side filtering ---
     def _norm(x):
         return str(x).strip()
 
     if state_filters:
         state_set = set(state_filters)
-        rows = [r for r in rows if isinstance(r, dict) and _norm(r.get('state', '')) in state_set]
+        merged_by_month = {k: v for k, v in merged_by_month.items() 
+                          if isinstance(v, dict) and _norm(v.get('state', '')) in state_set}
     if city_filters:
         city_set = set(city_filters)
-        rows = [r for r in rows if isinstance(r, dict) and _norm(r.get('city', '')) in city_set]
+        merged_by_month = {k: v for k, v in merged_by_month.items() 
+                          if isinstance(v, dict) and _norm(v.get('city', '')) in city_set}
 
-    # --- Extract dropdown options from API response ---
+    # --- Extract dropdown options from merged data ---
     states = set()
     cities = set()
     cities_by_state = defaultdict(set)
 
-    for r in rows:
-        if not isinstance(r, dict):
+    for row in list(static_rows) + list(dpd_rows):
+        if not isinstance(row, dict):
             continue
-        st = r.get('state')
-        ct = r.get('city')
+        st = row.get('state')
+        ct = row.get('city')
         if st:
             states.add(_norm(st))
         if ct:
@@ -3172,35 +3384,7 @@ def aum_report(request):
         if st and ct:
             cities_by_state[_norm(st)].add(_norm(ct))
 
-    # --- Process AUM data into monthly format ---
-    def parse_date_any(value):
-        """Parse various date formats from API response."""
-        if value is None:
-            return None
-        if isinstance(value, datetime):
-            return value.date()
-        if isinstance(value, date):
-            return value
-        s = str(value).strip()
-        if not s:
-            return None
-        formats = [
-            '%Y-%m-%d',
-            '%Y-%m-%dT%H:%M:%S',
-            '%Y-%m-%dT%H:%M:%S.%f',
-            '%d-%m-%Y',
-            '%d/%m/%Y',
-            '%Y/%m/%d',
-            '%b-%y',  # Jun-25
-            '%b %Y',  # Jun 2025
-        ]
-        for fmt in formats:
-            try:
-                return datetime.strptime(s.split('T')[0], fmt).date()
-            except (ValueError, AttributeError):
-                continue
-        return None
-
+    # --- Process merged data into monthly format using field mappings from documentation ---
     def to_float(v):
         """Convert value to float, handling currency symbols and commas."""
         if v is None:
@@ -3212,60 +3396,34 @@ def aum_report(request):
             return float(s)
         except (ValueError, TypeError):
             return 0.0
+    
+    def get_value(item, field_names, default=0.0):
+        """Flexible field extraction - tries multiple field name variations."""
+        if not item or not isinstance(item, dict):
+            return default
+        for field_name in field_names:
+            if field_name in item:
+                val = item[field_name]
+                if val is not None and val != '':
+                    return to_float(val)
+            # Try case-insensitive
+            for k, v in item.items():
+                if str(k).lower() == str(field_name).lower():
+                    if v is not None and v != '':
+                        return to_float(v)
+        return default
 
-    # Helper function to determine if a row is reloan
-    def as_bool(v):
-        if isinstance(v, bool):
-            return v
-        if isinstance(v, (int, float)):
-            return float(v) != 0.0
-        s = str(v).strip().lower()
-        if s in ('true', '1', 'yes', 'y', 'reloan', 're-loan'):
-            return True
-        if s in ('false', '0', 'no', 'n', 'fresh', 'new'):
-            return False
-        return False
-
-    def is_reloan_row(r):
-        if not isinstance(r, dict):
-            return False
-        # direct keys
-        for k in ('is_reloan_case', 'isReloanCase', 'is_reloan', 'isReloan', 'reloan_case', 'reloanCase'):
-            if k in r:
-                return as_bool(r.get(k))
-        # case-insensitive keys
-        lower_map = {str(k).lower(): k for k in r.keys()}
-        for lk in ('is_reloan_case', 'isreloancase', 'is_reloan', 'isreloan'):
-            if lk in lower_map:
-                return as_bool(r.get(lower_map[lk]))
-        # loan type strings
-        for k in ('loan_type', 'loanType', 'type'):
-            if k in r and r.get(k) is not None:
-                s = str(r.get(k)).strip().lower()
-                if 'reloan' in s:
-                    return True
-                if 'fresh' in s or 'new' in s:
-                    return False
-        return False
-
-    # Group data by month with Fresh/Reloan splits
+    # Group data by month using field mappings from documentation
     monthly_data = defaultdict(lambda: {
         'stpl_units': 0, 'stpl_sum': 0.0,
-        'stpl_fresh_units': 0, 'stpl_fresh_sum': 0.0,
-        'stpl_reloan_units': 0, 'stpl_reloan_sum': 0.0,
-        'loan_disbursed_fresh_units': 0, 'loan_disbursed_fresh_sum': 0.0,
         'loan_disbursed_repeat_units': 0, 'loan_disbursed_repeat_sum': 0.0,
         'loan_disbursed_total_units': 0, 'loan_disbursed_total_sum': 0.0,
+        'ats': 0.0,
         'running_cases_units': 0, 'running_cases_sum': 0.0,
-        'running_cases_fresh_units': 0, 'running_cases_fresh_sum': 0.0,
-        'running_cases_reloan_units': 0, 'running_cases_reloan_sum': 0.0,
         'overdue_1_30_units': 0, 'overdue_1_30_sum': 0.0,
         'overdue_31_90_units': 0, 'overdue_31_90_sum': 0.0,
         'overdue_90_plus_units': 0, 'overdue_90_plus_sum': 0.0,
         'loan_book_aum_units': 0, 'loan_book_aum_sum': 0.0,
-        'loan_book_aum_fresh_units': 0, 'loan_book_aum_fresh_sum': 0.0,
-        'loan_book_aum_reloan_units': 0, 'loan_book_aum_reloan_sum': 0.0,
-        'ats': 0.0,
         'dpd_1_plus': 0.0,
         'dpd_30_plus': 0.0,
         'dpd_90_plus': 0.0,
@@ -3276,161 +3434,103 @@ def aum_report(request):
         'avg_tenure': 0.0,
     })
 
-    # Process rows and aggregate by month
-    print(f"[AUM Report] Processing {len(rows)} rows for monthly aggregation...")
-    processed_count = 0
-    for r in rows:
-        if not isinstance(r, dict):
+    # Process merged data by month using exact field mappings from documentation
+    print(f"[AUM Report] Processing {len(merged_by_month)} merged months...")
+    for month_key, item in merged_by_month.items():
+        if not isinstance(item, dict):
             continue
-        
-        # Try to extract month from various date fields
-        month_key = None
-        date_fields_to_try = ['month', 'date', 'report_date', 'period', 'month_year', 'report_month', 'month_year', 'reporting_month', 'as_on_date', 'as_of_date']
-        
-        # First, check if any key contains 'month' or 'date' (case-insensitive)
-        for key, value in r.items():
-            key_lower = str(key).lower()
-            if any(term in key_lower for term in ['month', 'date', 'period']):
-                date_val = parse_date_any(value)
-                if date_val:
-                    month_key = date_val.strftime('%b-%y')  # Jun-25 format
-                    print(f"[AUM Report] Found month from field '{key}': {month_key}")
-                    break
-        
-        # If still not found, try explicit field names
-        if not month_key:
-            for date_field in date_fields_to_try:
-                if date_field in r:
-                    date_val = parse_date_any(r[date_field])
-                    if date_val:
-                        month_key = date_val.strftime('%b-%y')
-                        print(f"[AUM Report] Found month from explicit field '{date_field}': {month_key}")
-                        break
-        
-        # If no date found, try to infer from date range or use a default
-        if not month_key:
-            # Generate months from date range
-            current_date = date_from
-            months_in_range = []
-            while current_date <= date_to:
-                months_in_range.append(current_date.strftime('%b-%y'))
-                # Move to next month
-                if current_date.month == 12:
-                    current_date = current_date.replace(year=current_date.year + 1, month=1)
-                else:
-                    current_date = current_date.replace(month=current_date.month + 1)
-            
-            if months_in_range:
-                month_key = months_in_range[0]  # Use first month in range
-                print(f"[AUM Report] No date field found, using first month in range: {month_key}")
-            else:
-                month_key = date_from.strftime('%b-%y')
-                print(f"[AUM Report] No date field found, using date_from: {month_key}")
         
         month_data = monthly_data[month_key]
         
-        # Determine if this is a reloan
-        is_reloan = is_reloan_row(r)
+        # STPL (SHORT TERM PERSONAL LOAN) - from static_data
+        # Units: fresh_disbursed, Sum: fresh_loan_amount
+        month_data['stpl_units'] = int(get_value(item, ['fresh_disbursed', 'freshDisbursed', 'FRESH_DISBURSED'], 0))
+        month_data['stpl_sum'] = get_value(item, ['fresh_loan_amount', 'freshLoanAmount', 'FRESH_LOAN_AMOUNT'], 0.0)
         
-        # Map API fields to our structure (flexible field matching)
-        def get_value(field_variations, default=0.0):
-            for var in field_variations:
-                if var in r:
-                    return to_float(r[var])
-                # Try case-insensitive
-                for k, v in r.items():
-                    if str(k).lower() == str(var).lower():
-                        return to_float(v)
-            return default
+        # Loan Disbursed - REPEAT - from static_data
+        # Units: reloan_disbursed, Sum: reloan_loan_amount
+        month_data['loan_disbursed_repeat_units'] = int(get_value(item, ['reloan_disbursed', 'reloanDisbursed', 'RELOAN_DISBURSED'], 0))
+        month_data['loan_disbursed_repeat_sum'] = get_value(item, ['reloan_loan_amount', 'reloanLoanAmount', 'RELOAN_LOAN_AMOUNT'], 0.0)
         
-        # Get loan amount/disbursal amount for this row
-        loan_amount = get_value(['loan_amount', 'loan_amt', 'principal_amount', 'principal', 'disbursal_amount', 'disbursal_amt', 'disbursed_amount'], 0.0)
-        loan_count = 1  # Each row typically represents one loan
+        # Loan Disbursed - Total - from static_data
+        # Units: total_loans, Sum: total_loan_amount
+        month_data['loan_disbursed_total_units'] = int(get_value(item, ['total_loans', 'totalLoans', 'TOTAL_LOANS'], 0))
+        month_data['loan_disbursed_total_sum'] = get_value(item, ['total_loan_amount', 'totalLoanAmount', 'TOTAL_LOAN_AMOUNT'], 0.0)
         
-        # STPL - with Fresh/Reloan split
-        stpl_amt = get_value(['stpl_units', 'stpl_count', 'stpl_loans', 'stpl_units_count', 'loan_amount', 'loan_amt'], loan_amount)
-        stpl_sum = get_value(['stpl_sum', 'stpl_amount', 'stpl_total', 'stpl_amt', 'loan_amount', 'loan_amt'], loan_amount)
-        month_data['stpl_units'] += int(stpl_amt) if stpl_amt > 0 else loan_count
-        month_data['stpl_sum'] += stpl_sum
-        if is_reloan:
-            month_data['stpl_reloan_units'] += int(stpl_amt) if stpl_amt > 0 else loan_count
-            month_data['stpl_reloan_sum'] += stpl_sum
-        else:
-            month_data['stpl_fresh_units'] += int(stpl_amt) if stpl_amt > 0 else loan_count
-            month_data['stpl_fresh_sum'] += stpl_sum
+        # ATS (Average Ticket Size) - from static_data
+        # Single value: average_ticket_size
+        month_data['ats'] = get_value(item, ['average_ticket_size', 'averageTicketSize', 'AVERAGE_TICKET_SIZE'], 0.0)
         
-        # Loan Disbursed - FRESH
-        fresh_amt = get_value(['loan_disbursed_fresh_units', 'fresh_units', 'fresh_count', 'fresh_loans'], 0) if not is_reloan else 0
-        fresh_sum = get_value(['loan_disbursed_fresh_sum', 'fresh_amount', 'fresh_total', 'fresh_amt'], loan_amount) if not is_reloan else 0.0
-        month_data['loan_disbursed_fresh_units'] += int(fresh_amt) if fresh_amt > 0 else (loan_count if not is_reloan else 0)
-        month_data['loan_disbursed_fresh_sum'] += fresh_sum
+        # Running Cases - from dpd_data
+        # Units: running_cases_cnt, Sum: regular_plus_sanction
+        month_data['running_cases_units'] = int(get_value(item, ['running_cases_cnt', 'runningCasesCnt', 'RUNNING_CASES_CNT'], 0))
+        month_data['running_cases_sum'] = get_value(item, ['regular_plus_sanction', 'regularPlusSanction', 'REGULAR_PLUS_SANCTION'], 0.0)
         
-        # Loan Disbursed - REPEAT (Reloan)
-        repeat_amt = get_value(['loan_disbursed_repeat_units', 'repeat_units', 'repeat_count', 'repeat_loans'], 0) if is_reloan else 0
-        repeat_sum = get_value(['loan_disbursed_repeat_sum', 'repeat_amount', 'repeat_total', 'repeat_amt'], loan_amount) if is_reloan else 0.0
-        month_data['loan_disbursed_repeat_units'] += int(repeat_amt) if repeat_amt > 0 else (loan_count if is_reloan else 0)
-        month_data['loan_disbursed_repeat_sum'] += repeat_sum
+        # Over Due +1-30 Day - from dpd_data
+        # Units: dpd_1_30_cnt, Sum: dpd_1_30_sanction
+        month_data['overdue_1_30_units'] = int(get_value(item, ['dpd_1_30_cnt', 'dpd1_30Cnt', 'DPD_1_30_CNT'], 0))
+        month_data['overdue_1_30_sum'] = get_value(item, ['dpd_1_30_sanction', 'dpd1_30Sanction', 'DPD_1_30_SANCTION'], 0.0)
         
-        # Loan Disbursed - Total
-        total_amt = get_value(['loan_disbursed_total_units', 'total_units', 'total_count', 'total_loans'], loan_count)
-        total_sum = get_value(['loan_disbursed_total_sum', 'total_amount', 'total_total', 'total_amt'], loan_amount)
-        month_data['loan_disbursed_total_units'] += int(total_amt) if total_amt > 0 else loan_count
-        month_data['loan_disbursed_total_sum'] += total_sum
+        # Over Due +31-90 Day - from dpd_data (sum of two buckets)
+        # Units: dpd_31_60_cnt + dpd_61_90_cnt, Sum: dpd_31_60_sanction + dpd_61_90_sanction
+        dpd_31_60_cnt = int(get_value(item, ['dpd_31_60_cnt', 'dpd31_60Cnt', 'DPD_31_60_CNT'], 0))
+        dpd_61_90_cnt = int(get_value(item, ['dpd_61_90_cnt', 'dpd61_90Cnt', 'DPD_61_90_CNT'], 0))
+        month_data['overdue_31_90_units'] = dpd_31_60_cnt + dpd_61_90_cnt
+        dpd_31_60_sanction = get_value(item, ['dpd_31_60_sanction', 'dpd31_60Sanction', 'DPD_31_60_SANCTION'], 0.0)
+        dpd_61_90_sanction = get_value(item, ['dpd_61_90_sanction', 'dpd61_90Sanction', 'DPD_61_90_SANCTION'], 0.0)
+        month_data['overdue_31_90_sum'] = dpd_31_60_sanction + dpd_61_90_sanction
         
-        # Running Cases - with Fresh/Reloan split
-        running_amt = get_value(['running_cases_units', 'running_cases_count', 'active_cases', 'active_loans'], loan_count)
-        running_sum = get_value(['running_cases_sum', 'running_cases_amount', 'active_amount', 'active_total'], loan_amount)
-        month_data['running_cases_units'] += int(running_amt) if running_amt > 0 else loan_count
-        month_data['running_cases_sum'] += running_sum
-        if is_reloan:
-            month_data['running_cases_reloan_units'] += int(running_amt) if running_amt > 0 else loan_count
-            month_data['running_cases_reloan_sum'] += running_sum
-        else:
-            month_data['running_cases_fresh_units'] += int(running_amt) if running_amt > 0 else loan_count
-            month_data['running_cases_fresh_sum'] += running_sum
+        # Over Due 90+ Day - from dpd_data
+        # Units: dpd_90_plus_cnt, Sum: dpd_90_plus_sanction
+        month_data['overdue_90_plus_units'] = int(get_value(item, ['dpd_90_plus_cnt', 'dpd90PlusCnt', 'DPD_90_PLUS_CNT'], 0))
+        month_data['overdue_90_plus_sum'] = get_value(item, ['dpd_90_plus_sanction', 'dpd90PlusSanction', 'DPD_90_PLUS_SANCTION'], 0.0)
         
-        # Over Due +1-30 Day
-        month_data['overdue_1_30_units'] += int(get_value(['overdue_1_30_units', 'overdue_1_30_count', 'dpd_1_30_count', 'dpd_1_30_units'], 0))
-        month_data['overdue_1_30_sum'] += get_value(['overdue_1_30_sum', 'overdue_1_30_amount', 'dpd_1_30_amount', 'dpd_1_30_sum'], 0.0)
+        # Loan Book(AUM) - Calculated
+        # Units: Running Cases + Over Due +1-30 Day + Over Due +31-90 Day + Over Due 90+ Day
+        # Sum: Running Cases + Over Due +1-30 Day + Over Due +31-90 Day + Over Due 90+ Day
+        month_data['loan_book_aum_units'] = (
+            month_data['running_cases_units'] + 
+            month_data['overdue_1_30_units'] + 
+            month_data['overdue_31_90_units'] + 
+            month_data['overdue_90_plus_units']
+        )
+        month_data['loan_book_aum_sum'] = (
+            month_data['running_cases_sum'] + 
+            month_data['overdue_1_30_sum'] + 
+            month_data['overdue_31_90_sum'] + 
+            month_data['overdue_90_plus_sum']
+        )
         
-        # Over Due +31-90 Day
-        month_data['overdue_31_90_units'] += int(get_value(['overdue_31_90_units', 'overdue_31_90_count', 'dpd_31_90_count', 'dpd_31_90_units'], 0))
-        month_data['overdue_31_90_sum'] += get_value(['overdue_31_90_sum', 'overdue_31_90_amount', 'dpd_31_90_amount', 'dpd_31_90_sum'], 0.0)
+        # DPD Percentages - Calculated
+        if month_data['loan_book_aum_sum'] > 0:
+            total_overdue = month_data['overdue_1_30_sum'] + month_data['overdue_31_90_sum'] + month_data['overdue_90_plus_sum']
+            month_data['dpd_1_plus'] = (total_overdue / month_data['loan_book_aum_sum']) * 100
+            month_data['dpd_30_plus'] = ((month_data['overdue_31_90_sum'] + month_data['overdue_90_plus_sum']) / month_data['loan_book_aum_sum']) * 100
+            month_data['dpd_90_plus'] = (month_data['overdue_90_plus_sum'] / month_data['loan_book_aum_sum']) * 100
         
-        # Over Due 90+ Day
-        month_data['overdue_90_plus_units'] += int(get_value(['overdue_90_plus_units', 'overdue_90_plus_count', 'dpd_90_plus_count', 'dpd_90_plus_units'], 0))
-        month_data['overdue_90_plus_sum'] += get_value(['overdue_90_plus_sum', 'overdue_90_plus_amount', 'dpd_90_plus_amount', 'dpd_90_plus_sum'], 0.0)
+        # PF Income (Incl. GST) - from static_data
+        # Single value: total_processing_fee
+        month_data['pf_income'] = get_value(item, ['total_processing_fee', 'totalProcessingFee', 'TOTAL_PROCESSING_FEE'], 0.0)
         
-        # Loan Book(AUM) - sum of running cases with Fresh/Reloan split
-        month_data['loan_book_aum_units'] = month_data['running_cases_units']
-        month_data['loan_book_aum_sum'] = month_data['running_cases_sum']
-        month_data['loan_book_aum_fresh_units'] = month_data['running_cases_fresh_units']
-        month_data['loan_book_aum_fresh_sum'] = month_data['running_cases_fresh_sum']
-        month_data['loan_book_aum_reloan_units'] = month_data['running_cases_reloan_units']
-        month_data['loan_book_aum_reloan_sum'] = month_data['running_cases_reloan_sum']
+        # Interest Income - from static_data
+        # Single value: interest_adjusted
+        month_data['interest_income'] = get_value(item, ['interest_adjusted', 'interestAdjusted', 'INTEREST_ADJUSTED'], 0.0)
         
-        # ATS (Average Ticket Size)
-        if month_data['running_cases_units'] > 0:
-            month_data['ats'] = month_data['running_cases_sum'] / month_data['running_cases_units']
+        # Avg PF (Incl. GST) - from static_data
+        # Single value: average_pf_amount
+        month_data['avg_pf'] = get_value(item, ['average_pf_amount', 'averagePfAmount', 'AVERAGE_PF_AMOUNT'], 0.0)
         
-        # DPD Percentages
-        if month_data['running_cases_sum'] > 0:
-            month_data['dpd_1_plus'] = ((month_data['overdue_1_30_sum'] + month_data['overdue_31_90_sum'] + month_data['overdue_90_plus_sum']) / month_data['running_cases_sum']) * 100
-            month_data['dpd_30_plus'] = ((month_data['overdue_31_90_sum'] + month_data['overdue_90_plus_sum']) / month_data['running_cases_sum']) * 100
-            month_data['dpd_90_plus'] = (month_data['overdue_90_plus_sum'] / month_data['running_cases_sum']) * 100
+        # Avg ROI - from static_data
+        # Single value: average_roi (e.g., 0.9, not 90)
+        month_data['avg_roi'] = get_value(item, ['average_roi', 'averageRoi', 'AVERAGE_ROI'], 0.0)
         
-        # Income metrics
-        month_data['pf_income'] += get_value(['pf_income', 'processing_fee_income', 'pf_income_gst'], 0.0)
-        month_data['interest_income'] += get_value(['interest_income', 'interest'], 0.0)
-        month_data['avg_pf'] += get_value(['avg_pf', 'average_pf', 'avg_processing_fee'], 0.0)
-        month_data['avg_roi'] += get_value(['avg_roi', 'average_roi', 'roi'], 0.0)
-        month_data['avg_tenure'] += get_value(['avg_tenure', 'average_tenure', 'tenure'], 0.0)
+        # Avg Tenure - from static_data
+        # Single value: average_tenure
+        month_data['avg_tenure'] = get_value(item, ['average_tenure', 'averageTenure', 'AVERAGE_TENURE'], 0.0)
         
-        processed_count += 1
-        if processed_count <= 3:  # Log first 3 rows for debugging
-            print(f"[AUM Report] Processed row {processed_count}, month_key: {month_key}, sample fields: {list(r.keys())[:10]}")
+        print(f"[AUM Report] Processed month {month_key}: STPL={month_data['stpl_units']}, Total Loans={month_data['loan_disbursed_total_units']}, AUM={month_data['loan_book_aum_sum']}")
 
-    print(f"[AUM Report] Processed {processed_count} rows into monthly data")
+    print(f"[AUM Report] Processed {len(merged_by_month)} months into monthly data")
     
     # Sort months chronologically
     def month_sort_key(month_str):
@@ -3450,21 +3550,14 @@ def aum_report(request):
             if month_str not in monthly_data:
                 monthly_data[month_str] = {
                     'stpl_units': 0, 'stpl_sum': 0.0,
-                    'stpl_fresh_units': 0, 'stpl_fresh_sum': 0.0,
-                    'stpl_reloan_units': 0, 'stpl_reloan_sum': 0.0,
-                    'loan_disbursed_fresh_units': 0, 'loan_disbursed_fresh_sum': 0.0,
                     'loan_disbursed_repeat_units': 0, 'loan_disbursed_repeat_sum': 0.0,
                     'loan_disbursed_total_units': 0, 'loan_disbursed_total_sum': 0.0,
+                    'ats': 0.0,
                     'running_cases_units': 0, 'running_cases_sum': 0.0,
-                    'running_cases_fresh_units': 0, 'running_cases_fresh_sum': 0.0,
-                    'running_cases_reloan_units': 0, 'running_cases_reloan_sum': 0.0,
                     'overdue_1_30_units': 0, 'overdue_1_30_sum': 0.0,
                     'overdue_31_90_units': 0, 'overdue_31_90_sum': 0.0,
                     'overdue_90_plus_units': 0, 'overdue_90_plus_sum': 0.0,
                     'loan_book_aum_units': 0, 'loan_book_aum_sum': 0.0,
-                    'loan_book_aum_fresh_units': 0, 'loan_book_aum_fresh_sum': 0.0,
-                    'loan_book_aum_reloan_units': 0, 'loan_book_aum_reloan_sum': 0.0,
-                    'ats': 0.0,
                     'dpd_1_plus': 0.0,
                     'dpd_30_plus': 0.0,
                     'dpd_90_plus': 0.0,
@@ -3483,18 +3576,18 @@ def aum_report(request):
         print(f"[AUM Report] Generated {len(sorted_months)} months from date range: {sorted_months}")
     
     # Calculate total loan book AUM
-    total_loan_book_aum = sum(month_data['loan_book_aum_sum'] for month_data in monthly_data.values())
+    # Total Loan Book AUM = Sum of all monthly (Loan Book(AUM) Sum - Over Due 90+ Day Sum)
+    total_loan_book_aum = sum(month_data['loan_book_aum_sum'] - month_data['overdue_90_plus_sum'] for month_data in monthly_data.values())
     
     # Convert monthly_data to a list format for easier template access
     monthly_data_list = [{'month': month, 'data': monthly_data[month]} for month in sorted_months]
 
-    # Data table preview (avoid rendering thousands of rows by default)
-    total_rows = len(rows)
+    # Data table preview (for debugging - show merged data)
+    total_rows = len(static_rows) + len(dpd_rows)
     preview_limit = 200
-    rows_preview = rows[:preview_limit] if isinstance(rows, list) else []
+    rows_preview = list(merged_by_month.values())[:preview_limit] if merged_by_month else []
 
-    print(f"[AUM Report] Total rows after filtering: {total_rows}")
-    print(f"[AUM Report] Preview rows: {len(rows_preview)}")
+    print(f"[AUM Report] Total rows: Static={len(static_rows)}, DPD={len(dpd_rows)}, Merged months={len(merged_by_month)}")
     print(f"[AUM Report] API error: {api_error}")
     print(f"[AUM Report] Monthly data keys: {sorted_months}")
     print(f"[AUM Report] Monthly data count: {len(monthly_data)}")
