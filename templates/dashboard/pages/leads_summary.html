@@ -1,21 +1,260 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}Leads Summary - Edge Analytics Dashboard{% endblock %}
 
 {% block page_title %}Leads Summary{% endblock %}
+{% block page_subtitle %}Marketing Spend Sheet – input fields and table selection{% endblock %}
 
 {% block filters %}
+<div class="mb-6">
+    <div class="bg-white dark:bg-slate-900/50 border border-gray-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <form method="get" action="{% url 'leads_summary' %}" id="leads-filter-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                <!-- Table dropdown -->
+                <div>
+                    <label for="table" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Table</label>
+                    <select name="table" id="table" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                        {% for value, label in table_choices %}
+                            <option value="{{ value }}" {% if selected_table == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- Date From -->
+                <div>
+                    <label for="date_from" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Date From</label>
+                    <input type="date" name="date_from" id="date_from" value="{{ date_from }}" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <!-- Date To -->
+                <div>
+                    <label for="date_to" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Date To</label>
+                    <input type="date" name="date_to" id="date_to" value="{{ date_to }}" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <!-- Source dropdown -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label for="source" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Source</label>
+                        <a href="#" onclick="openManageSourcesModal(); return false;" class="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400">Manage sources</a>
+                    </div>
+                    <select name="source" id="source" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" onchange="handleSourceChange(this)">
+                        {% for value, label in source_choices %}
+                            <option value="{{ value }}" {% if selected_source == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Apply</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block kpi_cards %}
 {% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-center min-h-[60vh]">
-    <div class="text-center">
-        <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Under Development</h2>
-        <p class="text-gray-600 dark:text-gray-400">This page is currently under development.</p>
+<div class="space-y-6">
+    <!-- Input fields (Marketing Spend Sheet fields) -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-gray-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">Marketing Spend – Input Fields</h2>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Date, Source, No. Of Applications, Sanctioned, Disbursed, Spend</p>
+        </div>
+        <form method="get" action="{% url 'leads_summary' %}" id="leads-input-form" class="p-4">
+            <input type="hidden" name="table" value="{{ selected_table }}">
+            <input type="hidden" name="date_from" value="{{ date_from }}">
+            <input type="hidden" name="date_to" value="{{ date_to }}">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div>
+                    <label for="date_input" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Date</label>
+                    <input type="date" name="date" id="date_input" value="{{ selected_date }}" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="source_input" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Source</label>
+                        <a href="#" onclick="openManageSourcesModal(); return false;" class="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400">Manage sources</a>
+                    </div>
+                    <select name="source" id="source_input" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" onchange="handleSourceChange(this)">
+                        {% for value, label in source_choices %}
+                            <option value="{{ value }}" {% if selected_source == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="no_of_applications" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">No. Of Applications</label>
+                    <input type="number" name="no_of_applications" id="no_of_applications" value="{{ no_of_applications }}" min="0" step="1" placeholder="e.g. 385" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <div>
+                    <label for="total_amount_sanctioned" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Total Amount Sanctioned (₹)</label>
+                    <input type="number" name="total_amount_sanctioned" id="total_amount_sanctioned" value="{{ total_amount_sanctioned }}" min="0" step="0.01" placeholder="e.g. 1387398" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <div>
+                    <label for="total_amount_disbursed" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Total Amount Disbursed (₹)</label>
+                    <input type="number" name="total_amount_disbursed" id="total_amount_disbursed" value="{{ total_amount_disbursed }}" min="0" step="0.01" placeholder="e.g. 1222342" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <div>
+                    <label for="spend" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Spend (₹)</label>
+                    <input type="number" name="spend" id="spend" value="{{ spend }}" min="0" step="0.01" placeholder="e.g. 31485.17" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <div>
+                    <label for="total_amount_spend" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Total Amount Spend (₹)</label>
+                    <input type="number" name="total_amount_spend" id="total_amount_spend" value="{{ total_amount_spend }}" min="0" step="0.01" placeholder="e.g. 31485.17" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">Save / Apply</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table display (based on Table dropdown selection) -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-gray-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40 flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+                {% if selected_table == 'marketing_spend_sheet' %}Marketing Spend Sheet (1st Jan–Till date){% else %}Table View{% endif %}
+            </h2>
+            <span class="text-xs text-gray-500 dark:text-slate-400">Date range: {{ date_from }} to {{ date_to }}{% if selected_source %} · Source: {{ selected_source }}{% endif %}</span>
+        </div>
+        <div class="overflow-x-auto">
+            {% if selected_table == 'marketing_spend_sheet' %}
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 text-sm">
+                <thead class="bg-gray-50 dark:bg-slate-900">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Product</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Source</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">No. Of Applications</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Total Amount Sanctioned</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Total Amount Disbursed</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Spend</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Total Amount Spend</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                    {% if no_of_applications or total_amount_sanctioned or total_amount_disbursed or spend or total_amount_spend %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-slate-200">{{ selected_date }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-slate-200">Blinkr Loan</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-slate-200">{{ selected_source_label|default:"Google - L.Page Website" }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-slate-200 text-right">{{ no_of_applications|default:"—" }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-slate-200 text-right">{% if total_amount_sanctioned %}{{ total_amount_sanctioned|intcomma }}{% else %}—{% endif %}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-slate-200 text-right">{% if total_amount_disbursed %}{{ total_amount_disbursed|intcomma }}{% else %}—{% endif %}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-slate-200 text-right">{% if spend %}{{ spend }}{% else %}—{% endif %}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-slate-200 text-right">{% if total_amount_spend %}{{ total_amount_spend }}{% else %}—{% endif %}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-slate-400 text-sm">Select date and source above, enter values in the input fields (No. Of Applications, Total Amount Sanctioned, Total Amount Disbursed, Spend, Total Amount Spend) and click Save / Apply to see data here.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="p-8 text-center text-gray-500 dark:text-slate-400 text-sm">
+                <p class="mb-2">Select a table from the <strong>Table</strong> dropdown above (e.g. Marketing Spend Sheet) and click Apply.</p>
+                <p>Then use the input fields to enter No. Of Applications, Total Amount Sanctioned, Total Amount Disbursed, Spend, and Total Amount Spend.</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
+
+<!-- Add Source Modal -->
+<div id="add-source-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="add-source-title" role="dialog" aria-modal="true">
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/50 transition-opacity" onclick="closeAddSourceModal()"></div>
+        <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full p-5 border border-gray-200 dark:border-slate-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3" id="add-source-title">Add Source</h3>
+            <form method="post" action="{% url 'leads_summary' %}" id="add-source-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_source">
+                <input type="hidden" name="table" value="{{ selected_table }}">
+                <input type="hidden" name="date_from" value="{{ date_from }}">
+                <input type="hidden" name="date_to" value="{{ date_to }}">
+                <input type="hidden" name="date" value="{{ selected_date }}">
+                <input type="hidden" name="source" value="{{ selected_source }}">
+                <input type="hidden" name="date" value="{{ selected_date }}">
+                <input type="hidden" name="source" value="{{ selected_source }}">
+                <label for="new_source_name" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Source name</label>
+                <input type="text" name="new_source_name" id="new_source_name" required maxlength="200" placeholder="e.g. LinkedIn" class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-200 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeAddSourceModal()" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Manage Sources Modal (Active / Inactive) -->
+<div id="manage-sources-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="manage-sources-title" role="dialog" aria-modal="true">
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/50 transition-opacity" onclick="closeManageSourcesModal()"></div>
+        <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full p-5 border border-gray-200 dark:border-slate-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3" id="manage-sources-title">Manage Sources</h3>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mb-4">Toggle sources active or inactive. Inactive sources are hidden from the dropdown.</p>
+            <ul class="space-y-2 mb-4 max-h-64 overflow-y-auto">
+                {% for s in all_sources %}
+                <li class="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-slate-700/50">
+                    <span class="text-sm text-gray-900 dark:text-slate-200">{{ s.label }}</span>
+                    <a href="{% url 'leads_summary' %}?toggle_source={{ s.value|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&table={{ selected_table }}&source={{ selected_source|urlencode }}&date={{ selected_date }}" class="text-xs font-medium px-2.5 py-1 rounded {% if s.active %}bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300{% else %}bg-gray-200 text-gray-600 dark:bg-slate-600 dark:text-slate-400{% endif %}" {% if s.active %}onclick="return confirm('Do you really want to make \u201C{{ s.label|escapejs }}\u201D inactive?');"{% else %}onclick="return confirm('Do you really want to make \u201C{{ s.label|escapejs }}\u201D active?');"{% endif %}>{% if s.active %}Active{% else %}Inactive{% endif %}</a>
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="flex justify-end">
+                <button type="button" onclick="closeManageSourcesModal()" class="px-3 py-2 bg-gray-200 dark:bg-slate-600 hover:bg-gray-300 dark:hover:bg-slate-500 text-gray-900 dark:text-slate-200 text-sm font-medium rounded-lg">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var lastSourceValue = '{{ selected_source|escapejs }}';
+
+    function handleSourceChange(selectEl) {
+        var value = selectEl ? selectEl.value : '';
+        if (value === '__add_source__') {
+            selectEl.value = lastSourceValue || '';
+            document.getElementById('source').value = lastSourceValue || '';
+            document.getElementById('source_input').value = lastSourceValue || '';
+            openAddSourceModal();
+            return;
+        }
+        lastSourceValue = value;
+        var other = selectEl.id === 'source' ? document.getElementById('source_input') : document.getElementById('source');
+        if (other) other.value = value;
+    }
+    window.handleSourceChange = handleSourceChange;
+
+    function openAddSourceModal() {
+        document.getElementById('add-source-modal').classList.remove('hidden');
+        document.getElementById('new_source_name').focus();
+    }
+    function closeAddSourceModal() {
+        document.getElementById('add-source-modal').classList.add('hidden');
+    }
+    window.openAddSourceModal = openAddSourceModal;
+    window.closeAddSourceModal = closeAddSourceModal;
+
+    function openManageSourcesModal() {
+        document.getElementById('manage-sources-modal').classList.remove('hidden');
+    }
+    function closeManageSourcesModal() {
+        document.getElementById('manage-sources-modal').classList.add('hidden');
+    }
+    window.openManageSourcesModal = openManageSourcesModal;
+    window.closeManageSourcesModal = closeManageSourcesModal;
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAddSourceModal();
+            closeManageSourcesModal();
+        }
+    });
+})();
+</script>
 {% endblock %}

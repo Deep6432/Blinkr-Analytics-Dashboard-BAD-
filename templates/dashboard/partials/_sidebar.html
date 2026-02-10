@@ -17,6 +17,7 @@
         </button>
     </div>
     <nav class="flex-1 px-2 py-3 space-y-1 overflow-y-auto">
+        {% if user_allowed_pages is None or 'leads_summary' in user_allowed_pages %}
         <!-- Leads Summary -->
         <a 
             href="{% url 'leads_summary' %}" 
@@ -33,7 +34,8 @@
                 <span id="nav-leads" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Leads Summary</span>
             </div>
         </a>
-        
+        {% endif %}
+        {% if user_allowed_pages is None or 'disbursal_summary' in user_allowed_pages %}
         <!-- Disbursal Summary -->
         <a 
             href="{% url 'disbursal_summary' %}" 
@@ -50,7 +52,8 @@
                 <span id="nav-disbursal" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Disbursal Summary</span>
             </div>
         </a>
-        
+        {% endif %}
+        {% if user_allowed_pages is None or 'collection_summary' in user_allowed_pages %}
         <!-- Collection Summary -->
         <a 
             href="{% url 'collection_summary' %}" 
@@ -66,7 +69,8 @@
                 <span id="nav-collection-summary" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Collection Summary</span>
             </div>
         </a>
-        
+        {% endif %}
+        {% if user_allowed_pages is None or 'loan_count_wise' in user_allowed_pages %}
         <!-- Loan Count Wise -->
         <a 
             href="{% url 'loan_count_wise' %}" 
@@ -82,7 +86,8 @@
                 <span id="nav-loan-count" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Loan Count Wise</span>
             </div>
         </a>
-        
+        {% endif %}
+        {% if user_allowed_pages is None or 'daily_performance_metrics' in user_allowed_pages %}
         <!-- Daily Performance Metrics -->
         <a 
             href="{% url 'daily_performance_metrics' %}" 
@@ -98,7 +103,8 @@
                 <span id="nav-daily-metrics" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Daily Performance Metrics</span>
             </div>
         </a>
-        
+        {% endif %}
+        {% if user_allowed_pages is None or 'credit_person_wise' in user_allowed_pages %}
         <!-- Credit Person Wise -->
         <a 
             href="{% url 'credit_person_wise' %}" 
@@ -114,7 +120,25 @@
                 <span id="nav-credit-person" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Credit Person Wise</span>
             </div>
         </a>
-        
+        {% endif %}
+        {% if user_allowed_pages is None or 'sale_performance' in user_allowed_pages %}
+        <!-- Sales Performance -->
+        <a 
+            href="{% url 'sale_performance' %}" 
+            class="sidebar-nav-item group relative flex items-center px-3 py-2.5 rounded-xl transition-all duration-300 {% if request.resolver_match.url_name == 'sale_performance' %}text-white active-tab{% else %}text-white/50 hover:text-white{% endif %}"
+            title="Sales Performance"
+        >
+            <div class="flex items-center gap-3 w-full">
+                <div class="flex items-center justify-center w-9 h-9 rounded-lg {% if request.resolver_match.url_name == 'sale_performance' %}bg-white/25 shadow-md{% else %}bg-white/8 group-hover:bg-white/15{% endif %} transition-all duration-300">
+                    <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                </div>
+                <span id="nav-sales-performance" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">Sales Performance</span>
+            </div>
+        </a>
+        {% endif %}
+        {% if user_allowed_pages is None or 'aum_report' in user_allowed_pages %}
         <!-- AUM Report -->
         <a 
             href="{% url 'aum_report' %}" 
@@ -130,6 +154,7 @@
                 <span id="nav-aum" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">AUM Report</span>
             </div>
         </a>
+        {% endif %}
     </nav>
 </aside>
 
@@ -147,48 +172,70 @@
         </div>
         <nav class="px-4 py-6 space-y-1">
             <!-- Same navigation items as desktop -->
+            {% if user_allowed_pages is None or 'leads_summary' in user_allowed_pages %}
             <a href="{% url 'leads_summary' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'leads_summary' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 <span class="font-medium">Leads Summary</span>
             </a>
+            {% endif %}
+            {% if user_allowed_pages is None or 'disbursal_summary' in user_allowed_pages %}
             <a href="{% url 'disbursal_summary' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'disbursal_summary' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span class="font-medium">Disbursal Summary</span>
             </a>
+            {% endif %}
+            {% if user_allowed_pages is None or 'collection_summary' in user_allowed_pages %}
             <a href="{% url 'collection_summary' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'collection_summary' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span class="font-medium">Collection Summary</span>
             </a>
+            {% endif %}
+            {% if user_allowed_pages is None or 'loan_count_wise' in user_allowed_pages %}
             <a href="{% url 'loan_count_wise' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'loan_count_wise' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 <span class="font-medium">Loan Count Wise</span>
             </a>
+            {% endif %}
+            {% if user_allowed_pages is None or 'daily_performance_metrics' in user_allowed_pages %}
             <a href="{% url 'daily_performance_metrics' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'daily_performance_metrics' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 <span class="font-medium">Daily Performance Metrics</span>
             </a>
+            {% endif %}
+            {% if user_allowed_pages is None or 'credit_person_wise' in user_allowed_pages %}
             <a href="{% url 'credit_person_wise' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'credit_person_wise' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <span class="font-medium">Credit Person Wise</span>
             </a>
+            {% endif %}
+            {% if user_allowed_pages is None or 'sale_performance' in user_allowed_pages %}
+            <a href="{% url 'sale_performance' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'sale_performance' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                <span class="font-medium">Sales Performance</span>
+            </a>
+            {% endif %}
+            {% if user_allowed_pages is None or 'aum_report' in user_allowed_pages %}
             <a href="{% url 'aum_report' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'aum_report' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 <span class="font-medium">AUM Report</span>
             </a>
+            {% endif %}
         </nav>
     </div>
 </div>

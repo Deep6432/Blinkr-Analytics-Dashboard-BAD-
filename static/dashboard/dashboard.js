@@ -344,6 +344,31 @@
                 totalRecordsEl.textContent = formatNumber(data.total_records);
             }
             
+            // Update Source Count (single number fallback)
+            const sourceCountEl = document.querySelector('[data-kpi="source_count"]');
+            if (sourceCountEl && data.source_count !== undefined) {
+                sourceCountEl.textContent = formatNumber(data.source_count);
+            }
+            
+            // Update Source card list (source name + count) when API returns source_labels and source_counts
+            const sourceCardList = document.getElementById('source-card-list');
+            if (sourceCardList && data.source_labels && data.source_counts) {
+                let sl = data.source_labels;
+                let sc = data.source_counts;
+                if (typeof sl === 'string') try { sl = JSON.parse(sl); } catch (e) {}
+                if (typeof sc === 'string') try { sc = JSON.parse(sc); } catch (e) {}
+                if (Array.isArray(sl) && Array.isArray(sc) && sl.length === sc.length) {
+                    sourceCardList.classList.add('grid', 'grid-cols-2');
+                    sourceCardList.classList.remove('flex', 'flex-col');
+                    sourceCardList.style.fontSize = '10px';
+                    sourceCardList.innerHTML = sl.map((name, i) => {
+                        const count = sc[i] != null ? formatNumber(sc[i]) : '0';
+                        const safeName = String(name).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                        return `<div class="flex items-center justify-between py-1 px-0 gap-1 min-w-0"><span class="text-gray-700 dark:text-slate-300 truncate font-medium" title="${safeName}">${safeName}</span><span class="text-gray-900 dark:text-white font-bold tabular-nums flex-shrink-0">${count}</span></div>`;
+                    }).join('');
+                }
+            }
+            
             // Update Fresh/Reloan counts
             const freshCountEl = document.querySelector('[data-kpi="fresh_count"]');
             const reloanCountEl = document.querySelector('[data-kpi="reloan_count"]');
@@ -730,6 +755,8 @@
             let sourceValues = data.source_values;
             let sourceSanction = data.source_sanction;
             let sourceCounts = data.source_counts;
+            let sourceFreshCounts = data.source_fresh_counts;
+            let sourceReloanCounts = data.source_reloan_counts;
             
             // If data is JSON string, parse it
             if (typeof stateLabels === 'string') {
@@ -758,6 +785,8 @@
                     sourceValues = JSON.parse(sourceValues);
                     sourceSanction = JSON.parse(sourceSanction);
                     if (sourceCounts) sourceCounts = typeof sourceCounts === 'string' ? JSON.parse(sourceCounts) : sourceCounts;
+                    if (sourceFreshCounts) sourceFreshCounts = typeof sourceFreshCounts === 'string' ? JSON.parse(sourceFreshCounts) : sourceFreshCounts;
+                    if (sourceReloanCounts) sourceReloanCounts = typeof sourceReloanCounts === 'string' ? JSON.parse(sourceReloanCounts) : sourceReloanCounts;
                 } catch (e) {
                     console.error('Error parsing source data:', e);
                 }
@@ -841,8 +870,8 @@
             
             // Update source chart
             if (sourceLabels && sourceValues && sourceLabels.length > 0 && sourceValues.length > 0) {
-                // Update global data object for tooltip callbacks
-                window.sourceData = { labels: sourceLabels, values: sourceValues, sanction: sourceSanction || [], counts: sourceCounts || [] };
+                // Update global data object for tooltip callbacks and legend
+                window.sourceData = { labels: sourceLabels, values: sourceValues, sanction: sourceSanction || [], counts: sourceCounts || [], freshCounts: sourceFreshCounts || [], reloanCounts: sourceReloanCounts || [] };
                 
                 if (typeof window.sourceChart !== 'undefined' && window.sourceChart) {
                     console.log('Updating source chart');
@@ -862,16 +891,16 @@
                     window.sourceChart.data.datasets[0].backgroundColor = chartColors.slice(0, sourceLabels.length);
                     window.sourceChart.update('none');
                     
-                    // Update legend if function exists
+                    // Update legend if function exists (pass fresh/reloan for source breakdown)
                     if (typeof window.renderCustomLegend === 'function' && sourceSanction) {
                         window.renderCustomLegend('sourceLegend', sourceLabels, sourceValues,
-                            window.sourceChart.data.datasets[0].backgroundColor, sourceSanction, sourceCounts);
+                            window.sourceChart.data.datasets[0].backgroundColor, sourceSanction, sourceCounts, sourceFreshCounts || [], sourceReloanCounts || []);
                     }
                 } else {
                     console.warn('Source chart not found, attempting to initialize...');
                     if (typeof window.initializeCharts === 'function') {
                         // Update global data first
-                        window.sourceData = { labels: sourceLabels, values: sourceValues, sanction: sourceSanction, counts: sourceCounts || [] };
+                        window.sourceData = { labels: sourceLabels, values: sourceValues, sanction: sourceSanction, counts: sourceCounts || [], freshCounts: sourceFreshCounts || [], reloanCounts: sourceReloanCounts || [] };
                         window.initializeCharts();
                     }
                 }

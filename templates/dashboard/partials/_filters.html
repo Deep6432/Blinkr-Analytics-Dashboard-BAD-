@@ -397,6 +397,9 @@ function handleFilterSubmit(event) {
     const lps = document.getElementById('loan_pre_post_ontime_status');
     if (lps && lps.value) url.searchParams.set('loan_pre_post_ontime_status', lps.value);
     
+    // Cache-bust so browser always fetches fresh data (e.g. Sales Performance and other server-rendered pages)
+    url.searchParams.set('_refresh', Date.now().toString());
+    
     // Prevent default form submission and redirect manually
     event.preventDefault();
     window.location.href = url.toString();

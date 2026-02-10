@@ -134,6 +134,7 @@
             <div class="flex-1">
                 <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Pending Collection</p>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ pending_collection|default:"0"|floatformat:0|intcomma }}</p>
+                <p class="text-gray-500 dark:text-slate-500 text-xs mt-1 font-bold">Pending Collection %: {{ pending_collection_percentage|default:"0"|floatformat:2 }}% (of Repayment Amount)</p>
             </div>
         </div>
         <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
@@ -141,11 +142,13 @@
                 <span class="w-2 h-2 rounded-full bg-green-500"></span>
                 <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
                 <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_pending_collection|default:"0"|floatformat:0|intcomma }}</span>
+                <span class="text-gray-500 dark:text-slate-500 text-xs">({{ fresh_pending_collection_percentage|default:"0"|floatformat:2 }}%)</span>
             </span>
             <span class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-sky-400"></span>
                 <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
                 <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_pending_collection|default:"0"|floatformat:0|intcomma }}</span>
+                <span class="text-gray-500 dark:text-slate-500 text-xs">({{ reloan_pending_collection_percentage|default:"0"|floatformat:2 }}%)</span>
             </span>
         </div>
     </div>
@@ -156,6 +159,7 @@
             <div class="flex-1">
                 <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Principal Outstanding</p>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ pending_principal|default:"0"|floatformat:0|intcomma }}</p>
+                <p class="text-gray-500 dark:text-slate-500 text-xs mt-1 font-bold">Principal Outstanding %: {{ pending_principal_percentage|default:"0"|floatformat:2 }}% (of Principal Amount)</p>
             </div>
         </div>
         <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
@@ -163,11 +167,13 @@
                 <span class="w-2 h-2 rounded-full bg-green-500"></span>
                 <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
                 <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_pending_principal|default:"0"|floatformat:0|intcomma }}</span>
+                <span class="text-gray-500 dark:text-slate-500 text-xs">({{ fresh_pending_principal_percentage|default:"0"|floatformat:2 }}%)</span>
             </span>
             <span class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-sky-400"></span>
                 <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
                 <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_pending_principal|default:"0"|floatformat:0|intcomma }}</span>
+                <span class="text-gray-500 dark:text-slate-500 text-xs">({{ reloan_pending_principal_percentage|default:"0"|floatformat:2 }}%)</span>
             </span>
         </div>
     </div>

@@ -21,7 +21,7 @@
     {% endif %}
 
     <!-- AUM Report Table -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-gray-200 dark:border-slate-700 overflow-hidden">
+    <div id="aum-report-container" class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-gray-200 dark:border-slate-700 overflow-hidden">
         <!-- Compact header strip above table for context -->
         <div class="flex items-center justify-between px-3 py-1.5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40 text-[11px]">
             <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
@@ -35,6 +35,20 @@
                     <span>Sum = ₹ (Indian format)</span>
                 </div>
                 <button 
+                    onclick="toggleAumFullscreen()" 
+                    id="fullscreen-aum-btn" 
+                    class="px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg transition-colors hover:bg-slate-50 dark:hover:bg-slate-600 flex items-center gap-1.5" 
+                    title="Toggle Fullscreen"
+                >
+                    <svg id="fullscreen-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                    <svg id="exit-fullscreen-icon" class="w-3.5 h-3.5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span id="fullscreen-text">Fullscreen</span>
+                </button>
+                <button 
                     onclick="exportAumToExcel()" 
                     id="export-aum-excel-btn" 
                     class="ml-3 px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors hover:opacity-90 flex items-center gap-1.5" 
@@ -47,20 +61,10 @@
                 </button>
             </div>
         </div>
-        <div class="overflow-x-auto aum-scroll" style="max-height: 70vh;">
-            <table class="min-w-full border-collapse text-[11px] leading-tight" id="aum-report-table">
-                <!-- Title Row - Must span all columns: 1 (Category) + (months * 2) = 1 + 2*months -->
-                <thead>
-                    <tr>
-                        <th colspan="{{ sorted_months|length|add:sorted_months|length|add:1 }}"
-                            id="aum-report-title"
-                            class="bg-slate-900 text-white font-medium py-2 px-4 text-[11px] tracking-wide border-b border-slate-800"
-                            style="text-align: center !important; width: 100%;">
-                            <div style="text-align: center; margin: 0 auto; display: block;">AUM REPORT</div>
-                        </th>
-                    </tr>
-                </thead>
-
+        <div id="aum-fullscreen-inner" class="aum-fullscreen-inner">
+            <div id="aum-scale-wrapper" class="aum-scale-wrapper">
+                <div class="overflow-x-auto aum-scroll" style="max-height: 70vh;" id="aum-scroll-el">
+            <table class="min-w-full border-collapse text-[11px] leading-tight" id="aum-report-table" style="table-layout: auto; width: 100%;">
                 <!-- Header Row 1: Category + Months -->
                 <thead>
                     <tr>
@@ -348,6 +352,8 @@
                     {% endif %}
                 </tbody>
             </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -395,66 +401,12 @@
         </div>
     {% endif %}
 </div>
-
-<style>
-    /* Force center alignment for AUM REPORT title - Maximum specificity */
-    table#aum-report-table thead:first-child tr:first-child th#aum-report-title {
-        text-align: center !important;
-        text-align-last: center !important;
-        text-indent: 0 !important;
-    }
-    /* Override any inherited text alignment */
-    #aum-report-table thead tr:first-child th {
-        text-align: center !important;
-    }
-    /* Ensure the cell content is centered */
-    #aum-report-title,
-    #aum-report-title *,
-    #aum-report-title div {
-        text-align: center !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-        display: block !important;
-    }
-    /* Override any Tailwind or base template styles */
-    .bg-slate-900#aum-report-title {
-        text-align: center !important;
-    }
-</style>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
 // Provide cities-by-state mapping for the shared filter panel city filtering logic.
-window.citiesByState = JSON.parse('{{ cities_by_state_json|default:"{}"|escapejs }}');// Force center alignment for AUM REPORT title
-document.addEventListener('DOMContentLoaded', function() {
-    function centerTitle() {
-        const titleCell = document.getElementById('aum-report-title');
-        if (titleCell) {
-            // Remove any left-alignment classes
-            titleCell.classList.remove('text-left');
-            // Force center alignment
-            titleCell.style.textAlign = 'center';
-            titleCell.style.textAlignLast = 'center';
-            titleCell.style.marginLeft = 'auto';
-            titleCell.style.marginRight = 'auto';
-            titleCell.setAttribute('align', 'center');
-            
-            // Center the div inside
-            const div = titleCell.querySelector('div');
-            if (div) {
-                div.style.textAlign = 'center';
-                div.style.margin = '0 auto';
-                div.style.width = '100%';
-            }
-        }
-    }
-    
-    centerTitle();
-    // Also run after delays to override any late-loading styles
-    setTimeout(centerTitle, 100);
-    setTimeout(centerTitle, 500);
-});
+window.citiesByState = JSON.parse('{{ cities_by_state_json|default:"{}"|escapejs }}');
 
 // Export AUM Report table to Excel (CSV format)
 function exportAumToExcel() {
@@ -468,9 +420,9 @@ function exportAumToExcel() {
     const headers = ['Category'];
     const theadRows = table.querySelectorAll('thead tr');
     
-    // Get month headers from the second header row (Category + Months)
-    if (theadRows.length >= 2) {
-        const monthHeaders = theadRows[1].querySelectorAll('th[colspan="2"]');
+    // Get month headers from the first header row (Category + Months)
+    if (theadRows.length >= 1) {
+        const monthHeaders = theadRows[0].querySelectorAll('th[colspan="2"]');
         monthHeaders.forEach(th => {
             const monthText = th.textContent.trim();
             headers.push(monthText + ' - Units');
@@ -569,5 +521,257 @@ function exportAumToExcel() {
         }, 2000);
     }
 }
+
+// Fullscreen toggle functionality
+let isFullscreen = false;
+
+function applyAumFitToScreen() {
+    const inner = document.getElementById('aum-fullscreen-inner');
+    const scaleWrapper = document.getElementById('aum-scale-wrapper');
+    const scrollEl = document.getElementById('aum-scroll-el');
+    
+    if (!inner || !scaleWrapper || !scrollEl) return;
+    
+    inner.classList.add('aum-fit-active');
+    
+    function doFit() {
+        const tableWidth = scrollEl.scrollWidth;
+        const tableHeight = scrollEl.scrollHeight;
+        const availWidth = inner.clientWidth;
+        const availHeight = inner.clientHeight;
+        
+        if (tableWidth <= 0 || tableHeight <= 0 || availWidth <= 0 || availHeight <= 0) return;
+        
+        // Allow scaling UP in fullscreen so table fills viewport (remove cap at 1)
+        const scale = Math.min(availWidth / tableWidth, availHeight / tableHeight);
+        
+        scaleWrapper.style.width = (tableWidth * scale) + 'px';
+        scaleWrapper.style.height = (tableHeight * scale) + 'px';
+        scrollEl.style.transform = 'scale(' + scale + ')';
+        scrollEl.style.transformOrigin = '0 0';
+        scrollEl.style.maxHeight = tableHeight + 'px';
+        scrollEl.style.width = tableWidth + 'px';
+        scrollEl.style.height = tableHeight + 'px';
+    }
+    
+    doFit();
+    requestAnimationFrame(doFit);
+    requestAnimationFrame(function() { requestAnimationFrame(doFit); });
+}
+
+function removeAumFitToScreen() {
+    const inner = document.getElementById('aum-fullscreen-inner');
+    const scaleWrapper = document.getElementById('aum-scale-wrapper');
+    const scrollEl = document.getElementById('aum-scroll-el');
+    
+    if (inner) inner.classList.remove('aum-fit-active');
+    if (scaleWrapper) {
+        scaleWrapper.style.width = '';
+        scaleWrapper.style.height = '';
+    }
+    if (scrollEl) {
+        scrollEl.style.transform = '';
+        scrollEl.style.transformOrigin = '';
+        scrollEl.style.maxHeight = '';
+        scrollEl.style.width = '';
+        scrollEl.style.height = '';
+    }
+}
+
+function toggleAumFullscreen() {
+    const container = document.getElementById('aum-report-container');
+    const fullscreenBtn = document.getElementById('fullscreen-aum-btn');
+    const fullscreenIcon = document.getElementById('fullscreen-icon');
+    const exitFullscreenIcon = document.getElementById('exit-fullscreen-icon');
+    const fullscreenText = document.getElementById('fullscreen-text');
+    
+    if (!container || !fullscreenBtn) return;
+    
+    if (!isFullscreen) {
+        // Add fullscreen class first so layout is correct
+        container.classList.add('aum-fullscreen-active');
+        
+        // Enter fullscreen
+        const enterFs = function() {
+            setTimeout(applyAumFitToScreen, 50);
+            setTimeout(applyAumFitToScreen, 250);
+            setTimeout(applyAumFitToScreen, 500);
+        };
+        if (container.requestFullscreen) {
+            container.requestFullscreen().then(enterFs).catch(function() { enterFs(); });
+        } else if (container.webkitRequestFullscreen) {
+            container.webkitRequestFullscreen();
+            enterFs();
+        } else if (container.msRequestFullscreen) {
+            container.msRequestFullscreen();
+            enterFs();
+        } else if (container.mozRequestFullScreen) {
+            container.mozRequestFullScreen();
+            enterFs();
+        } else {
+            enterFs();
+        }
+        
+        // Update button state
+        fullscreenIcon.classList.add('hidden');
+        exitFullscreenIcon.classList.remove('hidden');
+        fullscreenText.textContent = 'Exit';
+        isFullscreen = true;
+    } else {
+        // Exit fullscreen
+        removeAumFitToScreen();
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        }
+        
+        // Update button state
+        fullscreenIcon.classList.remove('hidden');
+        exitFullscreenIcon.classList.add('hidden');
+        fullscreenText.textContent = 'Fullscreen';
+        isFullscreen = false;
+        
+        // Remove fullscreen class
+        container.classList.remove('aum-fullscreen-active');
+    }
+}
+
+// Listen for fullscreen change events
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+document.addEventListener('msfullscreenchange', handleFullscreenChange);
+document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+
+function handleFullscreenChange() {
+    const container = document.getElementById('aum-report-container');
+    const fullscreenBtn = document.getElementById('fullscreen-aum-btn');
+    const fullscreenIcon = document.getElementById('fullscreen-icon');
+    const exitFullscreenIcon = document.getElementById('exit-fullscreen-icon');
+    const fullscreenText = document.getElementById('fullscreen-text');
+    
+    if (!container || !fullscreenBtn) return;
+    
+    const isCurrentlyFullscreen = !!(document.fullscreenElement || 
+                                     document.webkitFullscreenElement || 
+                                     document.msFullscreenElement || 
+                                     document.mozFullScreenElement);
+    
+    if (!isCurrentlyFullscreen && isFullscreen) {
+        // User exited fullscreen via ESC key or other method
+        removeAumFitToScreen();
+        fullscreenIcon.classList.remove('hidden');
+        exitFullscreenIcon.classList.add('hidden');
+        fullscreenText.textContent = 'Fullscreen';
+        isFullscreen = false;
+        container.classList.remove('aum-fullscreen-active');
+    } else if (isCurrentlyFullscreen && isFullscreen) {
+        // Just entered fullscreen - apply fit to screen after layout (multiple delays for browser layout)
+        setTimeout(applyAumFitToScreen, 0);
+        setTimeout(applyAumFitToScreen, 100);
+        setTimeout(applyAumFitToScreen, 300);
+        setTimeout(applyAumFitToScreen, 500);
+    }
+}
 </script>
+
+<style>
+    /* Fullscreen styles */
+    #aum-report-container.aum-fullscreen-active {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999;
+        border-radius: 0;
+        margin: 0;
+        max-width: 100vw;
+        max-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    /* Fullscreen: fixed compact header so table area gets maximum height */
+    #aum-report-container.aum-fullscreen-active > div:first-child {
+        flex-shrink: 0;
+        height: 32px !important;
+        min-height: 32px !important;
+        max-height: 32px !important;
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Fullscreen fit-to-screen: inner area fills entire remaining viewport */
+    #aum-report-container.aum-fullscreen-active #aum-fullscreen-inner {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        height: calc(100vh - 32px) !important;
+        max-height: calc(100vh - 32px) !important;
+    }
+    
+    #aum-report-container.aum-fullscreen-active #aum-fullscreen-inner.aum-fit-active {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    #aum-report-container.aum-fullscreen-active #aum-scale-wrapper {
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+    
+    #aum-report-container.aum-fullscreen-active .aum-scroll {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    
+    #aum-report-container.aum-fullscreen-active #aum-fullscreen-inner:not(.aum-fit-active) .aum-scroll {
+        max-height: calc(100vh - 32px) !important;
+        height: calc(100vh - 32px);
+    }
+    
+    /* Ensure table is visible in fullscreen */
+    #aum-report-container:fullscreen,
+    #aum-report-container:-webkit-full-screen,
+    #aum-report-container:-moz-full-screen,
+    #aum-report-container:-ms-fullscreen {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        background: white;
+    }
+    
+    #aum-report-container:fullscreen .aum-scroll,
+    #aum-report-container:-webkit-full-screen .aum-scroll,
+    #aum-report-container:-moz-full-screen .aum-scroll,
+    #aum-report-container:-ms-fullscreen .aum-scroll {
+        max-height: calc(100vh - 32px) !important;
+        height: calc(100vh - 32px);
+    }
+    
+    /* Dark mode fullscreen */
+    .dark #aum-report-container:fullscreen,
+    .dark #aum-report-container:-webkit-full-screen,
+    .dark #aum-report-container:-moz-full-screen,
+    .dark #aum-report-container:-ms-fullscreen {
+        background: #0f172a;
+    }
+</style>
 {% endblock %}

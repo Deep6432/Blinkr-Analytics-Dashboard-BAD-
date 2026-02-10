@@ -17,6 +17,10 @@ from collections import defaultdict
 import pytz
 import os
 import re
+from urllib.parse import urlencode
+
+from .decorators import require_page_access
+from .models import get_first_allowed_url
 
 
 @require_http_methods(["GET", "POST"])
@@ -25,7 +29,7 @@ def custom_login(request):
     Custom login view that uses the Blinkr API for authentication
     """
     if request.user.is_authenticated:
-        return redirect('/')
+        return redirect(get_first_allowed_url(request.user))
     
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -148,7 +152,7 @@ def custom_login(request):
                         login(request, user)
                         messages.success(request, 'Login successful!')
                         # Store token in response context for JavaScript to save to localStorage
-                        response = redirect('/')
+                        response = redirect(get_first_allowed_url(user))
                         # Pass token via cookie (HttpOnly=False so JavaScript can access it)
                         # Note: This is less secure but needed for localStorage access
                         # Alternative: Pass via template context on redirect page
@@ -158,7 +162,7 @@ def custom_login(request):
                         # Fallback: login directly if authenticate fails
                         login(request, user)
                         messages.success(request, 'Login successful!')
-                        response = redirect('/')
+                        response = redirect(get_first_allowed_url(user))
                         response.set_cookie('blinkr_token_temp', token, max_age=5, httponly=False, samesite='Lax')
                         return response
                 else:
@@ -192,16 +196,138 @@ def custom_login(request):
 
 @login_required
 @never_cache
+@require_page_access
 def leads_summary(request):
     """
-    Leads Summary page view
+    Leads Summary page view – Marketing Spend Sheet inputs, table dropdown, and data table.
     """
-    context = {}
+    ist = pytz.timezone('Asia/Kolkata')
+    today_date = datetime.now(ist).date()
+    # Filter section: date range (date_from, date_to)
+    date_from_str = request.GET.get('date_from') or request.POST.get('date_from') or ''
+    date_to_str = request.GET.get('date_to') or request.POST.get('date_to') or ''
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else today_date
+    except ValueError:
+        date_from = today_date
+    try:
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else today_date
+    except ValueError:
+        date_to = today_date
+    if date_from > date_to:
+        date_from, date_to = date_to, date_from
+    # Marketing Spend section: single date
+    date_str = request.GET.get('date') or request.POST.get('date') or ''
+    try:
+        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else today_date
+    except ValueError:
+        selected_date = today_date
+
+    # Table dropdown options (report / sheet selection)
+    table_choices = [
+        ('', 'Select table…'),
+        ('marketing_spend_sheet', 'Marketing Spend Sheet (1st Jan–Till date)'),
+    ]
+    selected_table = request.GET.get('table') or request.POST.get('table') or ''
+
+    # Source dropdown: Product = Blinkr Loan; sub-sources for marketing
+    # Default sources (base list; active state can be overridden in session)
+    default_sources_base = [
+        {'value': 'google_lpage', 'label': 'Google - L.Page Website', 'active': True},
+        {'value': 'google_meta', 'label': 'Google - Meta', 'active': True},
+        {'value': 'meta', 'label': 'Meta', 'active': True},
+    ]
+    # Session overrides for default source active state (value -> bool)
+    source_active_overrides = request.session.get('leads_source_active_overrides', {})
+    default_sources = [
+        {**s, 'active': source_active_overrides.get(s['value'], s['active'])}
+        for s in default_sources_base
+    ]
+    # Get custom sources from session (stored as list of dicts)
+    custom_sources = list(request.session.get('leads_custom_sources', []))
+    # Combine default and custom sources
+    all_sources = default_sources + custom_sources
+    # Filter to only active sources for dropdown (unless showing all)
+    active_sources = [s for s in all_sources if s.get('active', True)]
+
+    # Handle add source action
+    if request.POST.get('action') == 'add_source':
+        new_source_name = request.POST.get('new_source_name', '').strip()
+        if new_source_name:
+            # Generate value from name (lowercase, replace spaces with underscore)
+            new_value = new_source_name.lower().replace(' ', '_').replace('-', '_')
+            existing_values = [s['value'] for s in all_sources]
+            if new_value not in existing_values:
+                new_source = {
+                    'value': new_value,
+                    'label': new_source_name,
+                    'active': True
+                }
+                custom_sources.append(new_source)
+                request.session['leads_custom_sources'] = custom_sources
+                request.session.modified = True
+            # Preserve filters: use GET params, or fall back to POST (e.g. from Add Source form)
+            if request.GET:
+                q = {k: (v[0] if isinstance(v, list) else v) for k, v in request.GET.lists()}
+            else:
+                q = {k: request.POST[k] for k in ('date_from', 'date_to', 'table', 'date', 'source') if request.POST.get(k)}
+            return redirect(request.path + ('?' + urlencode(q) if q else ''))
+
+    # Handle toggle active/inactive (persist for both default and custom sources)
+    toggle_source = request.GET.get('toggle_source')
+    if toggle_source:
+        default_values = [s['value'] for s in default_sources_base]
+        if toggle_source in default_values:
+            source_active_overrides = request.session.get('leads_source_active_overrides', {})
+            current = next((s.get('active', True) for s in all_sources if s['value'] == toggle_source), True)
+            source_active_overrides[toggle_source] = not current
+            request.session['leads_source_active_overrides'] = source_active_overrides
+        else:
+            for cs in custom_sources:
+                if cs['value'] == toggle_source:
+                    cs['active'] = not cs.get('active', True)
+                    break
+            request.session['leads_custom_sources'] = custom_sources
+        request.session.modified = True
+        # Redirect without toggle_source to avoid redirect loop
+        q = {k: (v[0] if isinstance(v, list) else v) for k, v in request.GET.lists() if k != 'toggle_source'}
+        return redirect(request.path + ('?' + urlencode(q) if q else ''))
+    
+    # Build source_choices for dropdown (only active sources + "Add Source" option)
+    source_choices = [('', 'Select source…')]
+    for source in active_sources:
+        source_choices.append((source['value'], source['label']))
+    source_choices.append(('__add_source__', '+ Add Source'))
+    
+    selected_source = request.GET.get('source') or request.POST.get('source') or ''
+    selected_source_label = next((label for v, label in source_choices if v == selected_source), '—')
+    
+    # Pass all sources (with status) for management UI
+    all_sources_with_status = all_sources
+
+    context = {
+        'today_date': today_date.strftime('%Y-%m-%d'),
+        'date_from': date_from.strftime('%Y-%m-%d'),
+        'date_to': date_to.strftime('%Y-%m-%d'),
+        'selected_date': selected_date.strftime('%Y-%m-%d'),
+        'table_choices': table_choices,
+        'selected_table': selected_table,
+        'source_choices': source_choices,
+        'selected_source': selected_source,
+        'selected_source_label': selected_source_label,
+        'all_sources': all_sources_with_status,
+        'no_of_applications': request.GET.get('no_of_applications') or request.POST.get('no_of_applications') or '',
+        'total_amount_sanctioned': request.GET.get('total_amount_sanctioned') or request.POST.get('total_amount_sanctioned') or '',
+        'total_amount_disbursed': request.GET.get('total_amount_disbursed') or request.POST.get('total_amount_disbursed') or '',
+        'spend': request.GET.get('spend') or request.POST.get('spend') or '',
+        'total_amount_spend': request.GET.get('total_amount_spend') or request.POST.get('total_amount_spend') or '',
+    }
     return render(request, 'dashboard/pages/leads_summary.html', context)
 
 
 @login_required
 @never_cache
+@require_page_access
 def disbursal_summary(request):
     """
     Disbursal Summary page view - Fetches data from API and filters by disbursal_date
@@ -424,7 +550,7 @@ def disbursal_summary(request):
     # Using dictionaries to store multiple values per state/city/source (including count)
     state_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
     city_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
-    source_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
+    source_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0, 'fresh_count': 0, 'reloan_count': 0})
     
     # Get unique states for filter dropdowns
     all_states = set()
@@ -506,17 +632,23 @@ def disbursal_summary(request):
             city_data[city]['net_disbursal'] += net_disbursal_amt
             city_data[city]['count'] += 1
         
-        # Source chart: Aggregate sanction, disbursal, net disbursal amounts, and count
+        # Source chart: Aggregate sanction, disbursal, net disbursal amounts, count, fresh/reloan
         if source:
             source_data[source]['disbursal'] += disbursal_amt
             source_data[source]['sanction'] += loan_amt
             source_data[source]['net_disbursal'] += net_disbursal_amt
             source_data[source]['count'] += 1
+            if is_reloan:
+                source_data[source]['reloan_count'] += 1
+            else:
+                source_data[source]['fresh_count'] += 1
     
     # Sort state, city, and source data by disbursal amount (descending) and take top 20
     sorted_states = sorted(state_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
     sorted_cities = sorted(city_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
     sorted_sources = sorted(source_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
+    source_counts = [item[1]['count'] for item in sorted_sources]
+    source_count = sum(source_counts)  # Total records with a lead source (for Source card)
     
     # Prepare chart data - use disbursal amount for chart size, but include all data for tooltips
     state_labels = [item[0] for item in sorted_states]
@@ -535,7 +667,8 @@ def disbursal_summary(request):
     source_values = [item[1]['disbursal'] for item in sorted_sources]
     source_sanction = [item[1]['sanction'] for item in sorted_sources]
     source_net_disbursal = [item[1]['net_disbursal'] for item in sorted_sources]
-    source_counts = [item[1]['count'] for item in sorted_sources]
+    source_fresh_counts = [item[1]['fresh_count'] for item in sorted_sources]
+    source_reloan_counts = [item[1]['reloan_count'] for item in sorted_sources]
     
     # Filter cities dropdown: show only cities from selected states
     if state_filters:
@@ -1090,6 +1223,8 @@ def disbursal_summary(request):
         'total_records': total_records,
         'fresh_count': fresh_count,
         'reloan_count': reloan_count,
+        'source_count': source_count,
+        'source_name_counts': list(zip(source_labels, source_counts)),  # For Source card: [(name, count), ...]
         
         # KPI Metrics - Loan Amounts
         'total_loan_amount': total_loan_amount,
@@ -1141,6 +1276,8 @@ def disbursal_summary(request):
         'source_sanction': json.dumps(source_sanction),
         'source_net_disbursal': json.dumps(source_net_disbursal),
         'source_counts': json.dumps(source_counts),
+        'source_fresh_counts': json.dumps(source_fresh_counts),
+        'source_reloan_counts': json.dumps(source_reloan_counts),
         
         # Filter Options
         'states': sorted(all_states),
@@ -1307,7 +1444,7 @@ def disbursal_data_api(request):
         
         state_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
         city_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
-        source_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0})
+        source_data = defaultdict(lambda: {'disbursal': 0, 'sanction': 0, 'net_disbursal': 0, 'count': 0, 'fresh_count': 0, 'reloan_count': 0})
         
         for record in records:
             is_reloan = record.get('is_reloan_case', False)
@@ -1374,11 +1511,17 @@ def disbursal_data_api(request):
                 source_data[source]['sanction'] += loan_amt
                 source_data[source]['net_disbursal'] += disbursal_amt
                 source_data[source]['count'] += 1
+                if is_reloan:
+                    source_data[source]['reloan_count'] += 1
+                else:
+                    source_data[source]['fresh_count'] += 1
         
         # Sort and prepare chart data
         sorted_states = sorted(state_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
         sorted_cities = sorted(city_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
         sorted_sources = sorted(source_data.items(), key=lambda x: x[1]['disbursal'], reverse=True)[:20]
+        source_counts = [item[1]['count'] for item in sorted_sources]
+        source_count = sum(source_counts)  # Total records with a lead source (for Source card)
         
         state_labels = [item[0] for item in sorted_states]
         state_values = [item[1]['disbursal'] for item in sorted_states]
@@ -1394,6 +1537,8 @@ def disbursal_data_api(request):
         source_values = [item[1]['disbursal'] for item in sorted_sources]
         source_sanction = [item[1]['sanction'] for item in sorted_sources]
         source_counts = [item[1]['count'] for item in sorted_sources]
+        source_fresh_counts = [item[1]['fresh_count'] for item in sorted_sources]
+        source_reloan_counts = [item[1]['reloan_count'] for item in sorted_sources]
         
         # Fetch Collection Metrics from API - USING SAME DATE RANGE AS DISBURSAL FILTERS
         # OPTIMIZATION: Skip collection metrics on initial page load to speed up page rendering (10-12 sec delay)
@@ -2066,6 +2211,7 @@ def disbursal_data_api(request):
             'total_records': total_records,
             'fresh_count': fresh_count,
             'reloan_count': reloan_count,
+            'source_count': source_count,
             'total_loan_amount': total_loan_amount,
             'fresh_loan_amount': fresh_loan_amount,
             'reloan_loan_amount': reloan_loan_amount,
@@ -2096,6 +2242,8 @@ def disbursal_data_api(request):
             'source_values': source_values,
             'source_sanction': source_sanction,
             'source_counts': source_counts,
+            'source_fresh_counts': source_fresh_counts,
+            'source_reloan_counts': source_reloan_counts,
             'collection_metrics': collection_metrics,
             'last_updated': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
         }
@@ -2218,6 +2366,7 @@ def disbursal_records_api(request):
 
 @login_required
 @never_cache
+@require_page_access
 def collection_without_fraud(request):
     """
     Collection Summary page view.
@@ -2251,6 +2400,22 @@ def collection_without_fraud(request):
     actual_repayment_bucket = (request.GET.get('actual_repayment_bucket') or '').strip()
     loan_pre_post_ontime_status = (request.GET.get('loan_pre_post_ontime_status') or '').strip()
     date_type = (request.GET.get('date_type') or 'repayment').strip().lower()  # Default to 'repayment'
+
+    # --- Cache: same filters => reuse context (5 min) to avoid slow API + processing on every tab switch ---
+    from django.core.cache import cache
+    cache_key = 'collection_summary:%s:%s:%s:%s:%s:%s:%s' % (
+        date_from.isoformat(),
+        date_to.isoformat(),
+        '|'.join(sorted(state_filters)),
+        '|'.join(sorted(city_filters)),
+        actual_repayment_bucket,
+        loan_pre_post_ontime_status,
+        date_type,
+    )
+    if not request.GET.get('refresh') and not request.GET.get('nocache'):
+        cached_context = cache.get(cache_key)
+        if cached_context is not None:
+            return render(request, 'dashboard/pages/collection_summary.html', cached_context)
 
     # --- Fetch ONLY collection_summary API ---
     api_url = 'https://backend.blinkrloan.com/insights/v2/collection_summary'
@@ -2366,67 +2531,11 @@ def collection_without_fraud(request):
             pass
         return None
 
-    # Filter by date_type (repayment or disbursal date)
-    if date_from and date_to:
-        filtered_rows = []
-        for r in rows:
-            if not isinstance(r, dict):
-                continue
-            
-            # Determine which date field to use based on date_type
-            date_value = None
-            if date_type == 'disbursal':
-                # Try disbursal date fields
-                date_fields = [
-                    'disbursal_date', 'disbursalDate', 'disbursal_date_ist',
-                    'disbursement_date', 'disbursementDate',
-                    'loan_disbursal_date', 'loanDisbursalDate',
-                    'disbursed_date', 'disbursedDate',
-                ]
-            else:  # repayment (default)
-                # Try repayment/received date fields
-                date_fields = [
-                    'date_of_received', 'date_of_recived', 'dateOfReceived',
-                    'received_date', 'receivedDate',
-                    'collection_date', 'collectionDate',
-                    'repayment_date', 'repaymentDate',
-                    'date_received', 'dateReceived',
-                ]
-            
-            # Try exact match first
-            for field in date_fields:
-                if field in r:
-                    date_value = r[field]
-                    break
-            
-            # Try case-insensitive match
-            if date_value is None:
-                row_keys_lower = {k.lower(): k for k in r.keys()}
-                for field in date_fields:
-                    field_lower = field.lower()
-                    if field_lower in row_keys_lower:
-                        actual_key = row_keys_lower[field_lower]
-                        date_value = r[actual_key]
-                        break
-            
-            # Parse the date
-            row_date = parse_date_any(date_value)
-            
-            # Include row if date is within range, or if date couldn't be parsed (to be safe)
-            if row_date is None:
-                # If date couldn't be parsed, include the row (to avoid excluding valid data)
-                filtered_rows.append(r)
-            elif date_from <= row_date <= date_to:
-                filtered_rows.append(r)
-        
-        rows_before_date_filter = len(rows)
-        rows = filtered_rows
-        rows_after_date_filter = len(rows)
-        print(f"[Collection Summary] Date filtering: {rows_before_date_filter} rows before, {rows_after_date_filter} rows after filtering by {date_type} date ({date_from} to {date_to})")
-        
-        # Count how many rows have loan_no
-        rows_with_loan_no = sum(1 for r in rows if isinstance(r, dict) and (r.get('loan_no') or r.get('loanNo') or r.get('loan_number')))
-        print(f"[Collection Summary] Rows with loan_no field: {rows_with_loan_no} out of {rows_after_date_filter} total rows")
+    # Date filtering: API is already called with startDate/endDate, so it returns rows for that range.
+    # We do NOT re-apply client-side date filtering, so the dashboard count matches the API (e.g. 4395).
+    # Optional: we could still filter by date_type field for charts; for KPI totals we use all API rows.
+    rows_after_date_filter = len(rows)
+    print(f"[Collection Summary] Using all {rows_after_date_filter} rows from API (date range {date_from} to {date_to} already applied by API)")
 
     # --- Aggregations / dropdown options ---
     def to_float(v):
@@ -2695,6 +2804,9 @@ def collection_without_fraud(request):
     rows_processed = 0
     rows_with_loan_no_count = 0
     rows_without_loan_no_count = 0
+    # Row counts for Total Applications (match API count; API returns rows for date range)
+    fresh_row_count = 0
+    reloan_row_count = 0
     
     for r in rows:
         if not isinstance(r, dict):
@@ -2722,6 +2834,10 @@ def collection_without_fraud(request):
             continue
         
         reloan_flag = is_reloan_row(r)
+        if reloan_flag:
+            reloan_row_count += 1
+        else:
+            fresh_row_count += 1
         if loan_no:
             (reloan_loan_nos if reloan_flag else fresh_loan_nos).add(_norm(loan_no))
         elif row_id:
@@ -2817,41 +2933,16 @@ def collection_without_fraud(request):
         if ln:
             daily_loan_nos[ds].add(_norm(ln))
 
-    total_applications = len(loan_nos)
-    fresh_total_applications = len(fresh_loan_nos)
-    reloan_total_applications = len(reloan_loan_nos)
+    # Total Applications = row count (matches API; API already returns rows for the selected date range)
+    total_applications = rows_processed
+    fresh_total_applications = fresh_row_count
+    reloan_total_applications = reloan_row_count
     
-    print(f"[Collection Summary] ========== TOTAL APPLICATIONS COUNT DEBUG ==========")
-    print(f"[Collection Summary] Rows processed: {rows_processed}")
-    print(f"[Collection Summary] Rows with loan_no: {rows_with_loan_no_count}")
-    print(f"[Collection Summary] Rows without loan_no (using id fallback): {rows_without_loan_no_count}")
-    print(f"[Collection Summary] Total unique loan_nos found: {total_applications}")
-    print(f"[Collection Summary] Fresh loan_nos: {fresh_total_applications}, Reloan loan_nos: {reloan_total_applications}")
-    print(f"[Collection Summary] Sum of Fresh + Reloan: {fresh_total_applications + reloan_total_applications}")
-    print(f"[Collection Summary] Expected: 4395, Actual: {total_applications}, Difference: {4395 - total_applications}")
+    print(f"[Collection Summary] ========== TOTAL APPLICATIONS COUNT ==========")
+    print(f"[Collection Summary] Total Applications (row count, matches API): {total_applications}")
+    print(f"[Collection Summary] Fresh: {fresh_total_applications}, Reloan: {reloan_total_applications}, Sum: {fresh_total_applications + reloan_total_applications}")
     
-    # Debug: Check sample rows for loan_no field variations
-    if rows_processed > 0:
-        sample_with_loan = None
-        sample_without_loan = None
-        for r in rows[:20]:
-            if not isinstance(r, dict):
-                continue
-            loan_no = r.get('loan_no') or r.get('loanNo') or r.get('loan_number') or r.get('loanNumber')
-            if loan_no and sample_with_loan is None:
-                sample_with_loan = r
-            if not loan_no and sample_without_loan is None:
-                sample_without_loan = r
-            if sample_with_loan and sample_without_loan:
-                break
-        
-        if sample_with_loan:
-            print(f"[Collection Summary] Sample row WITH loan_no - keys: {list(sample_with_loan.keys())[:20]}")
-        if sample_without_loan:
-            print(f"[Collection Summary] Sample row WITHOUT loan_no - keys: {list(sample_without_loan.keys())[:20]}")
-            print(f"[Collection Summary] Sample row WITHOUT loan_no - all fields: {dict(list(sample_without_loan.items())[:15])}")
-    
-    print(f"[Collection Summary] ========== END COUNT DEBUG ==========")
+    print(f"[Collection Summary] ========== END COUNT ==========")
 
     # Calculate Collection % (Collected Amount / Repayment Amount * 100)
     collection_percentage = 0.0
@@ -2866,6 +2957,28 @@ def collection_without_fraud(request):
     reloan_collection_percentage = 0.0
     if reloan_repayment_amount > 0:
         reloan_collection_percentage = (reloan_collected_amount / reloan_repayment_amount) * 100
+
+    # Pending Collection % = Pending Collection / Repayment Amount * 100
+    pending_collection_percentage = 0.0
+    if repayment_amount > 0:
+        pending_collection_percentage = (pending_collection / repayment_amount) * 100
+    fresh_pending_collection_percentage = 0.0
+    if fresh_repayment_amount > 0:
+        fresh_pending_collection_percentage = (fresh_pending_collection / fresh_repayment_amount) * 100
+    reloan_pending_collection_percentage = 0.0
+    if reloan_repayment_amount > 0:
+        reloan_pending_collection_percentage = (reloan_pending_collection / reloan_repayment_amount) * 100
+
+    # Principal Outstanding % = Principal Outstanding / Principal Amount * 100
+    pending_principal_percentage = 0.0
+    if principal_amount > 0:
+        pending_principal_percentage = (pending_principal / principal_amount) * 100
+    fresh_pending_principal_percentage = 0.0
+    if fresh_principal_amount > 0:
+        fresh_pending_principal_percentage = (fresh_pending_principal / fresh_principal_amount) * 100
+    reloan_pending_principal_percentage = 0.0
+    if reloan_principal_amount > 0:
+        reloan_pending_principal_percentage = (reloan_pending_principal / reloan_principal_amount) * 100
 
     dpd_bucket_distribution = [
         {'dpd_bucket': b, 'count': v['count'], 'amount': v['amount']}
@@ -3045,7 +3158,9 @@ def collection_without_fraud(request):
         'collected_amount': collected_amount,
         'collection_percentage': collection_percentage,
         'pending_collection': pending_collection,
+        'pending_collection_percentage': pending_collection_percentage,
         'pending_principal': pending_principal,
+        'pending_principal_percentage': pending_principal_percentage,
         'principal_collection_excl_90_dpd': principal_collection_excl_90,
 
         # KPI splits
@@ -3062,9 +3177,13 @@ def collection_without_fraud(request):
         'reloan_collected_amount': reloan_collected_amount,
         'reloan_collection_percentage': reloan_collection_percentage,
         'fresh_pending_collection': fresh_pending_collection,
+        'fresh_pending_collection_percentage': fresh_pending_collection_percentage,
         'reloan_pending_collection': reloan_pending_collection,
+        'reloan_pending_collection_percentage': reloan_pending_collection_percentage,
         'fresh_pending_principal': fresh_pending_principal,
+        'fresh_pending_principal_percentage': fresh_pending_principal_percentage,
         'reloan_pending_principal': reloan_pending_principal,
+        'reloan_pending_principal_percentage': reloan_pending_principal_percentage,
         'fresh_principal_collection_excl_90_dpd': fresh_principal_collection_excl_90_dpd,
         'reloan_principal_collection_excl_90_dpd': reloan_principal_collection_excl_90_dpd,
 
@@ -3089,6 +3208,13 @@ def collection_without_fraud(request):
         'collection_data_preview_limit': preview_limit,
     }
 
+    # Cache context for 5 minutes so repeat loads with same filters are fast (only on success)
+    if api_error is None:
+        try:
+            cache.set(cache_key, context, timeout=300)
+        except Exception:
+            pass
+
     return render(request, 'dashboard/pages/collection_summary.html', context)
 
 
@@ -3101,6 +3227,7 @@ def collection_with_fraud(request):
 
 @login_required
 @never_cache
+@require_page_access
 def loan_count_wise(request):
     """Loan Count Wise page view - Under Development"""
     return render(request, 'dashboard/pages/loan_count_wise.html')
@@ -3108,6 +3235,7 @@ def loan_count_wise(request):
 
 @login_required
 @never_cache
+@require_page_access
 def daily_performance_metrics(request):
     """Daily Performance Metrics page view - Under Development"""
     return render(request, 'dashboard/pages/daily_performance_metrics.html')
@@ -3115,9 +3243,160 @@ def daily_performance_metrics(request):
 
 @login_required
 @never_cache
+@require_page_access
 def credit_person_wise(request):
     """Credit Person Wise page view - Under Development"""
     return render(request, 'dashboard/pages/credit_person_wise.html')
+
+
+@login_required
+@never_cache
+@require_page_access
+def sale_performance(request):
+    """
+    Sales Performance page view.
+    Uses insights/v2/sales-daily-performance API with startDate and endDate.
+    """
+    ist = pytz.timezone('Asia/Kolkata')
+    today_date = datetime.now(ist).date()
+
+    date_from_str = request.GET.get('date_from') or ''
+    date_to_str = request.GET.get('date_to') or ''
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else today_date
+    except ValueError:
+        date_from = today_date
+    try:
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else today_date
+    except ValueError:
+        date_to = today_date
+
+    if date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    api_url = 'https://backend.blinkrloan.com/insights/v2/sales-daily-performance'
+    params = [
+        ('startDate', date_from.strftime('%Y-%m-%d')),
+        ('endDate', date_to.strftime('%Y-%m-%d')),
+    ]
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    token = request.session.get('blinkr_token')
+    if token:
+        headers['Authorization'] = f'Bearer {token}'
+    else:
+        api_key = os.environ.get('BLINKR_API_KEY') or getattr(settings, 'BLINKR_API_KEY', None)
+        if api_key:
+            headers['Authorization'] = f'Bearer {api_key}'
+
+    data = None
+    api_error = None
+    try:
+        resp = requests.get(api_url, params=params, headers=headers, timeout=30)
+        if resp.status_code != 200:
+            api_error = f"API returned {resp.status_code}: {resp.text[:200]}"
+        else:
+            raw = resp.json()
+            if isinstance(raw, dict):
+                for key in ('data', 'result', 'sales_daily_performance', 'items', 'records', 'response'):
+                    if key in raw:
+                        data = raw[key]
+                        break
+                if data is None:
+                    data = raw
+            elif isinstance(raw, list):
+                data = raw
+            else:
+                data = raw
+    except requests.RequestException as e:
+        api_error = f"Request failed: {e}"
+    except Exception as e:
+        api_error = f"Error: {e}"
+
+    # Type for template: 'list' (list of dicts), 'dict', or 'other'
+    sales_data_type = 'other'
+    harshit_team_data = []
+    ravi_team_data = []
+
+    # Harshit Team = Kinshu Singh(74), Pooja Chaudhary(48), Vinay Kumar(49), Simran Sangwan(50), Aman Kaushik(36), Abhay Chauhan(37). Rest = Ravi Team.
+    HARSHIT_TEAM_IDS = {74, 48, 49, 50, 36, 37}
+    HARSHIT_TEAM_NAMES = {
+        'kinshu singh', 'pooja chaudhary', 'vinay kumar', 'simran sangwan', 'aman kaushik', 'abhay chauhan'
+    }
+
+    def _norm(s):
+        return str(s).strip().lower() if s is not None else ''
+
+    def _extract_id_from_value(val):
+        """Extract numeric ID from values like 'Aman Kaushik (36)' or 'Name (74)'."""
+        if val is None:
+            return None
+        s = str(val).strip()
+        # Match (number) at end of string, e.g. "Aman Kaushik (36)"
+        match = re.search(r'\((\d+)\)\s*$', s)
+        if match:
+            try:
+                return int(match.group(1))
+            except (TypeError, ValueError):
+                pass
+        return None
+
+    def _belongs_to_harshit(row):
+        if not isinstance(row, dict):
+            return False
+        # Match by employee_id / user_id / id (direct numeric fields)
+        for key in ('employee_id', 'user_id', 'id', 'emp_id', 'userId', 'employeeId'):
+            if key in row and row[key] is not None:
+                try:
+                    vid = int(row[key])
+                    if vid in HARSHIT_TEAM_IDS:
+                        return True
+                except (TypeError, ValueError):
+                    pass
+        # Match by "Name (ID)" in any field (e.g. ALLOCATED_TO, allocated_to)
+        for key, val in row.items():
+            if val is None:
+                continue
+            eid = _extract_id_from_value(val)
+            if eid is not None and eid in HARSHIT_TEAM_IDS:
+                return True
+        # Match by name (any key containing 'name')
+        for key, val in row.items():
+            if val is not None and 'name' in key.lower():
+                if _norm(val) in HARSHIT_TEAM_NAMES:
+                    return True
+                v = _norm(val)
+                for n in HARSHIT_TEAM_NAMES:
+                    if n in v or v in n:
+                        return True
+        return False
+
+    if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
+        sales_data_type = 'list'
+        for row in data:
+            if _belongs_to_harshit(row):
+                harshit_team_data.append(row)
+            else:
+                ravi_team_data.append(row)
+    elif isinstance(data, dict):
+        sales_data_type = 'dict'
+
+    context = {
+        'api_error': api_error,
+        'today_date': today_date.strftime('%Y-%m-%d'),
+        'date_from': date_from.strftime('%Y-%m-%d'),
+        'date_to': date_to.strftime('%Y-%m-%d'),
+        'sales_data': data,
+        'sales_data_type': sales_data_type,
+        'harshit_team_data': harshit_team_data,
+        'ravi_team_data': ravi_team_data,
+    }
+    response = render(request, 'dashboard/pages/sale_performance.html', context)
+    # Ensure Sales Performance page is never cached so filter apply always shows fresh data
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 
 @login_required
@@ -3195,6 +3474,7 @@ def api_aum_report(request):
 
 @login_required
 @never_cache
+@require_page_access
 def aum_report(request):
     """
     AUM Report page view.

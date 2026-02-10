@@ -139,7 +139,9 @@ window.sourceData = {
     labels: {{ source_labels|safe|default:"[]" }},
     values: {{ source_values|safe|default:"[]" }},
     sanction: {{ source_sanction|safe|default:"[]" }},
-    counts: {{ source_counts|safe|default:"[]" }}
+    counts: {{ source_counts|safe|default:"[]" }},
+    freshCounts: {{ source_fresh_counts|safe|default:"[]" }},
+    reloanCounts: {{ source_reloan_counts|safe|default:"[]" }}
 };
 
 // Chart.js color palette (premium, accessible)
@@ -420,7 +422,7 @@ window.initializeCharts = function() {
             
             // Custom legend for source chart (show sanction amount and count)
             if (typeof window.renderCustomLegend === 'function') {
-                window.renderCustomLegend('sourceLegend', window.sourceData.labels, window.sourceData.values, window.chartColors, window.sourceData.sanction, window.sourceData.counts);
+                window.renderCustomLegend('sourceLegend', window.sourceData.labels, window.sourceData.values, window.chartColors, window.sourceData.sanction, window.sourceData.counts, window.sourceData.freshCounts, window.sourceData.reloanCounts);
             }
         }
     } else {
@@ -461,11 +463,12 @@ if (document.readyState === 'loading') {
 }
 
 // Render custom scrollable legend - make it global
-window.renderCustomLegend = function(containerId, labels, values, colors, sanctionValues, countValues) {
+// For source legend: pass freshCountValues and reloanCountValues to show Source name, Count, Fresh, Reloan
+window.renderCustomLegend = function(containerId, labels, values, colors, sanctionValues, countValues, freshCountValues, reloanCountValues) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
-    // Use sanction values if provided, otherwise use disbursal values
+    const isSourceLegend = !!(freshCountValues && reloanCountValues && labels.length && freshCountValues.length === labels.length && reloanCountValues.length === labels.length);
     const displayValues = sanctionValues || values;
     const total = displayValues.reduce((a, b) => a + b, 0);
     const totalCount = countValues ? countValues.reduce((a, b) => a + b, 0) : 0;
@@ -474,25 +477,47 @@ window.renderCustomLegend = function(containerId, labels, values, colors, sancti
     labels.forEach((label, index) => {
         const sanctionValue = displayValues[index] || 0;
         const countValue = countValues ? (countValues[index] || 0) : 0;
+        const freshValue = isSourceLegend ? (freshCountValues[index] || 0) : 0;
+        const reloanValue = isSourceLegend ? (reloanCountValues[index] || 0) : 0;
         const percentage = total > 0 ? ((sanctionValue / total) * 100).toFixed(1) : '0.0';
         const countPercentage = totalCount > 0 ? ((countValue / totalCount) * 100).toFixed(1) : '0.0';
         const color = colors[index % colors.length];
         
         const legendItem = document.createElement('div');
         legendItem.className = 'flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors';
-        legendItem.innerHTML = `
-            <div class="flex items-center gap-3">
-                <div class="w-4 h-4 rounded" style="background-color: ${color}"></div>
-                <div class="flex flex-col">
-                    <span class="text-sm text-gray-700 dark:text-slate-300">${label}</span>
-                    ${countValues ? `<span class="text-xs text-gray-500 dark:text-slate-500">Count: ${countValue.toLocaleString('en-IN')} (${countPercentage}%)</span>` : ''}
+        if (isSourceLegend) {
+            legendItem.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-4 h-4 rounded flex-shrink-0" style="background-color: ${color}"></div>
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-sm font-medium text-gray-900 dark:text-slate-200">${label}</span>
+                        <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500 dark:text-slate-500 mt-0.5">
+                            <span>Count: <strong class="text-gray-700 dark:text-slate-300">${countValue.toLocaleString('en-IN')}</strong></span>
+                            <span class="text-green-600 dark:text-green-400">Fresh: <strong>${freshValue.toLocaleString('en-IN')}</strong></span>
+                            <span class="text-sky-600 dark:text-sky-400">Reloan: <strong>${reloanValue.toLocaleString('en-IN')}</strong></span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <span class="text-sm font-medium text-gray-900 dark:text-slate-200">₹${sanctionValue.toLocaleString('en-IN')}</span>
-                <span class="text-xs text-gray-500 dark:text-slate-500">${percentage}%</span>
-            </div>
-        `;
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <span class="text-sm font-medium text-gray-900 dark:text-slate-200">₹${sanctionValue.toLocaleString('en-IN')}</span>
+                    <span class="text-xs text-gray-500 dark:text-slate-500">${percentage}%</span>
+                </div>
+            `;
+        } else {
+            legendItem.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-4 h-4 rounded" style="background-color: ${color}"></div>
+                    <div class="flex flex-col">
+                        <span class="text-sm text-gray-700 dark:text-slate-300">${label}</span>
+                        ${countValues ? `<span class="text-xs text-gray-500 dark:text-slate-500">Count: ${countValue.toLocaleString('en-IN')} (${countPercentage}%)</span>` : ''}
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-medium text-gray-900 dark:text-slate-200">₹${sanctionValue.toLocaleString('en-IN')}</span>
+                    <span class="text-xs text-gray-500 dark:text-slate-500">${percentage}%</span>
+                </div>
+            `;
+        }
         container.appendChild(legendItem);
     });
 };
@@ -632,14 +657,18 @@ function openFullscreenChart(chartId) {
         }
     });
     
-    // Render legend
+    // Render legend (for source chart pass fresh/reloan so legend shows Count, Fresh, Reloan)
     if (chartData && typeof window.renderCustomLegend === 'function') {
+        const freshCounts = chartId === 'sourceChart' && chartData.freshCounts ? chartData.freshCounts : null;
+        const reloanCounts = chartId === 'sourceChart' && chartData.reloanCounts ? chartData.reloanCounts : null;
         window.renderCustomLegend('fullscreen-chart-legend', 
             chartData.labels, 
             chartData.values, 
             window.fullscreenChartInstance.data.datasets[0].backgroundColor,
             chartData.sanction,
-            chartData.counts
+            chartData.counts,
+            freshCounts,
+            reloanCounts
         );
     }
     
