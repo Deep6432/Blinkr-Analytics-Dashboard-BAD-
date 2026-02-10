@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    container_name: blinker_edge_web
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=blinker_edge.settings
+    # For simple local use we rely on SQLite inside the container.
+    # Add volumes here if you want to persist the DB or edit code live.
+

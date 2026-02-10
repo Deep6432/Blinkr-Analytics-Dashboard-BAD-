@@ -223,3 +223,35 @@ Adjust design tokens in `styles.css`:
 
 This UI redesign is part of the Blinker Edge Analytics Dashboard project.
 
+
+## Run with Docker
+
+You can run the full Django project without installing Python or dependencies locally by using Docker.
+
+### 1. Prerequisites
+
+- Docker installed on your machine
+- (Optional) Docker Compose installed
+
+### 2. Run using Docker only
+
+From the project root (`Blinker_Edge_updated_Version_6.0`):
+
+```bash
+docker build -t blinker-edge-dashboard .
+docker run --name blinker-edge-dashboard \
+  -p 8000:8000 \
+  blinker-edge-dashboard
+```
+
+Then open `http://localhost:8000/` in your browser.
+
+### 3. Run using Docker Compose
+
+Alternatively, you can use the provided `docker-compose.yml`:
+
+```bash
+docker compose up --build
+```
+
+This will build the image (if needed), run database migrations, and start the Django development server on port `8000`.
