@@ -17,6 +17,7 @@ urlpatterns = [
     path('collection-summary/', views.collection_without_fraud, name='collection_summary'),
     path('collection-without-fraud/', views.collection_without_fraud, name='collection_without_fraud'),  # Keep for backward compatibility
     path('collection-with-fraud/', views.collection_with_fraud, name='collection_with_fraud'),  # Keep for backward compatibility
+    path('api/dpd-bucket-details/', views.dpd_bucket_details_api, name='dpd_bucket_details_api'),  # API endpoint for DPD bucket details
     path('loan-count-wise/', views.loan_count_wise, name='loan_count_wise'),
     path('daily-performance-metrics/', views.daily_performance_metrics, name='daily_performance_metrics'),
     path('credit-person-wise/', views.credit_person_wise, name='credit_person_wise'),

@@ -3220,6 +3220,107 @@ def collection_without_fraud(request):
 
 @login_required
 @never_cache
+def dpd_bucket_details_api(request):
+    """
+    API endpoint to fetch detailed records for a specific DPD bucket.
+    Returns filtered collection data matching the DPD bucket.
+    """
+    dpd_bucket = request.GET.get('dpd_bucket', '').strip()
+    if not dpd_bucket:
+        return JsonResponse({'error': 'dpd_bucket parameter is required'}, status=400)
+    
+    # Get the same filters as the main collection summary view
+    ist = pytz.timezone('Asia/Kolkata')
+    today_date = datetime.now(ist).date()
+    
+    date_from_str = request.GET.get('date_from') or ''
+    date_to_str = request.GET.get('date_to') or ''
+    
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else today_date
+    except ValueError:
+        date_from = today_date
+    try:
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else today_date
+    except ValueError:
+        date_to = today_date
+    
+    state_filters = [s.strip() for s in request.GET.getlist('state') if str(s).strip()]
+    city_filters = [c.strip() for c in request.GET.getlist('city') if str(c).strip()]
+    actual_repayment_bucket = (request.GET.get('actual_repayment_bucket') or '').strip()
+    loan_pre_post_ontime_status = (request.GET.get('loan_pre_post_ontime_status') or '').strip()
+    
+    # Fetch collection data with same filters
+    api_url = 'https://backend.blinkrloan.com/insights/v2/collection_summary'
+    params = [
+        ('startDate', date_from.strftime('%Y-%m-%d')),
+        ('endDate', date_to.strftime('%Y-%m-%d')),
+    ]
+    for s in state_filters:
+        params.append(('state', s))
+    for c in city_filters:
+        params.append(('city', c))
+    if actual_repayment_bucket:
+        params.append(('actual_repayment_bucket', actual_repayment_bucket))
+    if loan_pre_post_ontime_status:
+        params.append(('loan_pre_post_ontime_status', loan_pre_post_ontime_status))
+    
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    token = request.session.get('blinkr_token')
+    if token:
+        headers['Authorization'] = f'Bearer {token}'
+    else:
+        api_key = os.environ.get('BLINKR_API_KEY') or getattr(settings, 'BLINKR_API_KEY', None)
+        if api_key:
+            headers['Authorization'] = f'Bearer {api_key}'
+    
+    try:
+        resp = requests.get(api_url, params=params, headers=headers, timeout=30)
+        resp.raise_for_status()
+        api_data = resp.json()
+        
+        # Extract rows from API response
+        rows = []
+        for key in ('data', 'result', 'collection_summary', 'items', 'records'):
+            if key in api_data and isinstance(api_data[key], list):
+                rows = api_data[key]
+                break
+        
+        if not rows and isinstance(api_data, list):
+            rows = api_data
+        
+        # Normalize DPD bucket for comparison
+        def _norm(s):
+            return str(s).strip().lower() if s else ''
+        
+        dpd_bucket_norm = _norm(dpd_bucket)
+        
+        # Filter rows by DPD bucket
+        filtered_rows = []
+        for r in rows:
+            if not isinstance(r, dict):
+                continue
+            row_dpd = r.get('dpd_bucket') or r.get('dpdBucket')
+            if row_dpd and _norm(row_dpd) == dpd_bucket_norm:
+                filtered_rows.append(r)
+        
+        # Return filtered data
+        return JsonResponse({
+            'success': True,
+            'dpd_bucket': dpd_bucket,
+            'count': len(filtered_rows),
+            'data': filtered_rows[:1000],  # Limit to 1000 records for performance
+            'total': len(filtered_rows),
+        })
+        
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({'error': f'API request failed: {str(e)}'}, status=500)
+    except Exception as e:
+        return JsonResponse({'error': f'Unexpected error: {str(e)}'}, status=500)
+
+
+@login_required
+@never_cache
 def collection_with_fraud(request):
     """Collection With Fraud page view - Under Development"""
     return render(request, 'dashboard/pages/collection_summary.html')
