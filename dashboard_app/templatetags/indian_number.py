@@ -1,9 +1,24 @@
 """
-Custom template filters for Indian numbering system (lakhs/crores)
+Custom template filters for Indian numbering system (lakhs/crores) and string helpers.
 """
 from django import template
 
 register = template.Library()
+
+
+@register.filter
+def replace(value, arg):
+    """
+    Replace all occurrences of the first character(s) in arg with the rest.
+    Usage: {{ value|replace:"_| " }} replaces "_" with " "
+    """
+    if value is None or arg is None or '|' not in str(arg):
+        return value
+    parts = str(arg).split('|', 1)
+    if len(parts) != 2:
+        return value
+    old, new = parts[0], parts[1]
+    return str(value).replace(old, new)
 
 
 @register.filter

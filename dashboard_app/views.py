@@ -3017,20 +3017,31 @@ def collection_without_fraud(request):
     ]
 
     # Top Cities – Collection Rate (%) (horizontal bar)
-    # Define collection rate as Collected / (Collected + Pending) * 100
-    city_stats = defaultdict(lambda: {'collected': 0.0, 'pending': 0.0})
+    # Only include cities with at least MIN_LOANS_PER_CITY loans for meaningful analysis
+    # Group all Delhi regions (South Delhi, East Delhi, North Delhi, West Delhi, Central Delhi, South East Delhi, etc.) as "Delhi"
+    def _city_key_for_chart(city_str):
+        n = _norm(city_str)
+        if not n:
+            return n
+        if 'delhi' in n.lower():
+            return 'Delhi'
+        return n
+
+    MIN_LOANS_PER_CITY = 10
+    city_stats = defaultdict(lambda: {'collected': 0.0, 'pending': 0.0, 'loan_count': 0})
     for r in rows:
         if not isinstance(r, dict):
             continue
         city = r.get('city')
         if not city:
             continue
-        city_key = _norm(city)
+        city_key = _city_key_for_chart(city)
         city_stats[city_key]['collected'] += to_float(
             r.get('received_amount') or r.get('receivedAmount') or
             r.get('collected_amount') or r.get('collectedAmount')
         )
         city_stats[city_key]['pending'] += get_pending_collection_value(r)
+        city_stats[city_key]['loan_count'] += 1
 
     def rate_color(pct):
         # Match screenshot-like bands
@@ -3044,6 +3055,8 @@ def collection_without_fraud(request):
 
     city_rates = []
     for city, agg in city_stats.items():
+        if agg['loan_count'] < MIN_LOANS_PER_CITY:
+            continue
         denom = (agg['collected'] + agg['pending'])
         pct = (agg['collected'] / denom * 100.0) if denom > 0 else 0.0
         city_rates.append({
@@ -3051,6 +3064,7 @@ def collection_without_fraud(request):
             'pct': pct,
             'collected': agg['collected'],
             'pending': agg['pending'],
+            'loan_count': agg['loan_count'],
             'color': rate_color(pct),
         })
 
@@ -3062,6 +3076,7 @@ def collection_without_fraud(request):
     top_city_rate_colors = [x['color'] for x in top_city_rates]
     top_city_rate_collected = [x['collected'] for x in top_city_rates]
     top_city_rate_pending = [x['pending'] for x in top_city_rates]
+    top_city_rate_loan_count = [x['loan_count'] for x in top_city_rates]
 
     # Pending Cases by Amount Bucket (mixed chart)
     # Buckets based on pending amount (pending_collection) in INR
@@ -3198,6 +3213,8 @@ def collection_without_fraud(request):
         'top_city_rate_colors': json.dumps(top_city_rate_colors),
         'top_city_rate_collected': json.dumps(top_city_rate_collected),
         'top_city_rate_pending': json.dumps(top_city_rate_pending),
+        'top_city_rate_loan_count': json.dumps(top_city_rate_loan_count),
+        'top_city_min_loans': MIN_LOANS_PER_CITY,
         'pending_bucket_labels': json.dumps(pending_bucket_labels),
         'pending_bucket_counts': json.dumps(pending_bucket_counts),
         'pending_bucket_amounts': json.dumps(pending_bucket_amounts),
@@ -3332,6 +3349,130 @@ def collection_with_fraud(request):
 def loan_count_wise(request):
     """Loan Count Wise page view - Under Development"""
     return render(request, 'dashboard/pages/loan_count_wise.html')
+
+
+@login_required
+@never_cache
+@require_page_access
+def gst_summary(request):
+    """
+    GST Summary page view.
+    Uses insights/v2/getGSTdata API with startDate and endDate.
+    """
+    # --- Parse filters ---
+    ist = pytz.timezone('Asia/Kolkata')
+    today_date = datetime.now(ist).date()
+
+    # Default range: today to today
+    default_start_date = today_date
+    default_end_date = today_date
+
+    date_from_str = request.GET.get('date_from') or ''
+    date_to_str = request.GET.get('date_to') or ''
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else default_start_date
+    except ValueError:
+        date_from = default_start_date
+    try:
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else default_end_date
+    except ValueError:
+        date_to = default_end_date
+
+    if date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    # --- Fetch GST data from API ---
+    api_url = 'https://backend.blinkrloan.com/insights/v2/getGSTdata'
+    params = [
+        ('startDate', date_from.strftime('%Y-%m-%d')),
+        ('endDate', date_to.strftime('%Y-%m-%d')),
+    ]
+
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    token = request.session.get('blinkr_token')
+    if token:
+        headers['Authorization'] = f'Bearer {token}'
+    else:
+        api_key = os.environ.get('BLINKR_API_KEY') or getattr(settings, 'BLINKR_API_KEY', None)
+        if api_key:
+            headers['Authorization'] = f'Bearer {api_key}'
+
+    gst_data = []
+    api_error = None
+    try:
+        resp = requests.get(api_url, params=params, headers=headers, timeout=30)
+        resp.raise_for_status()
+        api_response = resp.json()
+        
+        # Extract data from API response (handle different response structures)
+        if isinstance(api_response, dict):
+            for key in ('data', 'result', 'gst_data', 'getGSTdata', 'items', 'records', 'response'):
+                if key in api_response and isinstance(api_response[key], list):
+                    gst_data = api_response[key]
+                    break
+            if not gst_data and isinstance(api_response, dict):
+                # If no list found, check if the whole response is the data
+                gst_data = [api_response] if api_response else []
+        elif isinstance(api_response, list):
+            gst_data = api_response
+        else:
+            gst_data = []
+            
+    except requests.exceptions.RequestException as e:
+        api_error = f"GST API request failed: {str(e)}"
+        print(f"[GST Summary] API Error: {api_error}")
+    except Exception as e:
+        api_error = f"Unexpected error: {str(e)}"
+        print(f"[GST Summary] Error: {api_error}")
+
+    # Compute KPI values from gst_data (support common key variants)
+    total_records = len(gst_data) if isinstance(gst_data, list) else 0
+    gross_processing_fee_gst = 0.0
+    pf_percent_sum = 0.0
+    pf_percent_count = 0
+    pf_amount = 0.0
+
+    def _get_float(row, *keys):
+        for k in keys:
+            if k in row and row[k] not in (None, ''):
+                try:
+                    return float(row[k])
+                except (ValueError, TypeError):
+                    pass
+        return None
+
+    for row in (gst_data or []):
+        if not isinstance(row, dict):
+            continue
+        v = _get_float(row, 'gross_processing_fee_gst', 'grossProcessingFeeGst', 'Gross_Processing_Fee_Gst', 'gross_processing_fee_GST')
+        if v is not None:
+            gross_processing_fee_gst += v
+        v = _get_float(row, 'pf_percent', 'pfPercent', 'PF_Percent', 'pf percent')
+        if v is not None:
+            pf_percent_sum += v
+            pf_percent_count += 1
+        v = _get_float(row, 'pf_amount', 'pfAmount', 'PF_Amount', 'pf amount')
+        if v is not None:
+            pf_amount += v
+
+    pf_percent = (pf_percent_sum / pf_percent_count) if pf_percent_count else 0.0
+
+    # Prepare context
+    context = {
+        'today_date': today_date.strftime('%Y-%m-%d'),
+        'date_from': date_from.strftime('%Y-%m-%d'),
+        'date_to': date_to.strftime('%Y-%m-%d'),
+        'gst_data': gst_data,
+        'api_error': api_error,
+        'total_records': total_records,
+        'gross_processing_fee_gst': gross_processing_fee_gst,
+        'pf_percent': pf_percent,
+        'pf_amount': pf_amount,
+        'gst_data_json': json.dumps(gst_data) if isinstance(gst_data, list) else '[]',
+    }
+
+    return render(request, 'dashboard/pages/gst_summary.html', context)
 
 
 @login_required

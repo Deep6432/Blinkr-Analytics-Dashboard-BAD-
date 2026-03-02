@@ -15,6 +15,7 @@ DASHBOARD_PAGE_NAMES = [
     'credit_person_wise',
     'sale_performance',
     'aum_report',
+    'gst_summary',
 ]
 
 

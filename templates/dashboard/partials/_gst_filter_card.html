@@ -1,0 +1,58 @@
+{# GST Summary: FilterCard – glass, date chips, gradient Apply. Same form action/params as main filter. #}
+<div class="gst-filter-card mb-6">
+    <div class="bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-slate-200/70 dark:border-slate-700/70 shadow-[0_12px_30px_rgba(15,23,42,0.08)] dark:shadow-[0_12px_30px_rgba(0,0,0,0.2)] rounded-2xl overflow-hidden">
+        <button type="button" id="gst-filter-toggle" class="w-full flex items-center justify-between text-left px-5 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors" onclick="toggleGstFilters()" aria-expanded="false" aria-controls="gst-filter-content">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-600 dark:text-indigo-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                </div>
+                <span class="font-semibold text-slate-800 dark:text-slate-200 text-[15px]">Refine your search criteria</span>
+            </div>
+            <svg id="gst-filter-chevron" class="w-5 h-5 text-slate-500 dark:text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+        </button>
+        <div id="gst-filter-content" class="border-t border-slate-200/70 dark:border-slate-700/70 px-5 py-4" style="display: none;">
+            <form id="filter-form" method="get" action="{% url 'gst_summary' %}" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">From</label>
+                    <input type="date" id="date_from" name="date_from" value="{% if request.GET.date_from %}{{ request.GET.date_from }}{% elif date_from %}{{ date_from }}{% else %}{{ today_date|default:'' }}{% endif %}" class="gst-date-pill px-4 py-2.5 rounded-xl border border-indigo-200/80 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <span class="text-slate-400 dark:text-slate-500">→</span>
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">To</label>
+                    <input type="date" id="date_to" name="date_to" value="{% if request.GET.date_to %}{{ request.GET.date_to }}{% elif date_to %}{{ date_to }}{% else %}{{ today_date|default:'' }}{% endif %}" class="gst-date-pill px-4 py-2.5 rounded-xl border border-indigo-200/80 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <button type="submit" class="gst-primary-btn inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold text-sm shadow-lg hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    Apply
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+function toggleGstFilters() {
+    var el = document.getElementById('gst-filter-content');
+    var chevron = document.getElementById('gst-filter-chevron');
+    var btn = document.getElementById('gst-filter-toggle');
+    if (el.style.display === 'none') {
+        el.style.display = 'block';
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+    } else {
+        el.style.display = 'none';
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('filter-form');
+    if (form && form.closest('.gst-filter-card')) {
+        form.onsubmit = function() {
+            var url = new URL(form.action || window.location.href);
+            url.searchParams.set('date_from', document.getElementById('date_from').value || '');
+            url.searchParams.set('date_to', document.getElementById('date_to').value || '');
+            url.searchParams.set('_refresh', Date.now().toString());
+            window.location.href = url.toString();
+            return false;
+        };
+    }
+});
+</script>

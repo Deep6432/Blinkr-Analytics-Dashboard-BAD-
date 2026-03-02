@@ -1,0 +1,206 @@
+{% load humanize %}
+<!-- Premium KPI Cards - Row 1 -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+    <!-- 1. Total Records -->
+    <div class="disp-kpi-card rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)] cursor-pointer" style="background: linear-gradient(135deg, #00072D 0%, #0a1628 100%);" onclick="openRecordsTable()" title="Click to view all records">
+        <div class="disp-accent-bar" style="background: #60a5fa;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Total Records</span>
+            </div>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight" data-kpi="total_records">{% if total_records %}{{ total_records|floatformat:0 }}{% else %}0{% endif %}</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold" data-kpi="fresh_count">{% if fresh_count %}{{ fresh_count }}{% else %}0{% endif %}</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold" data-kpi="reloan_count">{% if reloan_count %}{{ reloan_count }}{% else %}0{% endif %}</span></span>
+            </div>
+        </div>
+    </div>
+    <!-- 2. Source -->
+    <div class="disp-kpi-card rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);">
+        <div class="disp-accent-bar" style="background: #5eead4;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Source</span>
+            </div>
+            {% if source_name_counts %}
+            <div id="source-card-list" class="grid grid-cols-2 gap-x-2 gap-y-1 pt-2 mt-2 border-t border-white/20 max-h-28 overflow-y-auto pr-1 text-xs">
+                {% for name, count in source_name_counts %}
+                <div class="flex items-center justify-between gap-1 min-w-0">
+                    <span class="truncate opacity-95 font-medium" title="{{ name }}">{{ name }}</span>
+                    <span class="font-bold tabular-nums flex-shrink-0" data-source-name="{{ name }}" data-source-count>{{ count|floatformat:0 }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums" data-kpi="source_count">{% if source_count %}{{ source_count|floatformat:0 }}{% else %}0{% endif %}</p>
+            <p class="text-xs opacity-80 mt-1">Records by lead source</p>
+            {% endif %}
+        </div>
+    </div>
+    <!-- 3. Total Loan Amount -->
+    <div class="disp-kpi-card rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);">
+        <div class="disp-accent-bar" style="background: #93c5fd;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Total Loan Amount</span>
+            </div>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight" data-kpi="total_loan_amount">₹{% if total_loan_amount %}{{ total_loan_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{% if fresh_loan_amount %}{{ fresh_loan_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{% if reloan_loan_amount %}{{ reloan_loan_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+            </div>
+        </div>
+    </div>
+    <!-- 4. Total Disbursal Amount -->
+    <div class="disp-kpi-card rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #166534 0%, #15803d 100%);">
+        <div class="disp-accent-bar" style="background: #86efac;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Total Disbursal Amount</span>
+            </div>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight" data-kpi="total_disbursal_amount">₹{% if total_disbursal_amount %}{{ total_disbursal_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{% if fresh_disbursal_amount %}{{ fresh_disbursal_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{% if reloan_disbursal_amount %}{{ reloan_disbursal_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Premium KPI Cards - Row 2 -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+    <!-- 5. Processing Fee -->
+    <div class="disp-kpi-card rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);">
+        <div class="disp-accent-bar" style="background: #a5b4fc;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Processing Fee</span>
+            </div>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{% if processing_fee %}{{ processing_fee|floatformat:0|intcomma }}{% else %}0{% endif %}</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{% if fresh_processing_fee %}{{ fresh_processing_fee|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{% if reloan_processing_fee %}{{ reloan_processing_fee|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+            </div>
+        </div>
+    </div>
+    <!-- 6. Interest Amount -->
+    <div class="disp-kpi-card rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);">
+        <div class="disp-accent-bar" style="background: #c4b5fd;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Interest Amount</span>
+            </div>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{% if interest_amount %}{{ interest_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{% if fresh_interest_amount %}{{ fresh_interest_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{% if reloan_interest_amount %}{{ reloan_interest_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+            </div>
+        </div>
+    </div>
+    <!-- 7. Repayment Amount -->
+    <div class="disp-kpi-card rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #b45309 0%, #ea580c 100%);">
+        <div class="disp-accent-bar" style="background: #fed7aa;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Repayment Amount</span>
+            </div>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{% if repayment_amount %}{{ repayment_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{% if fresh_repayment_amount %}{{ fresh_repayment_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{% if reloan_repayment_amount %}{{ reloan_repayment_amount|floatformat:0|intcomma }}{% else %}0{% endif %}</span></span>
+            </div>
+        </div>
+    </div>
+    <!-- 8. Average Tenure -->
+    <div class="disp-kpi-card rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);">
+        <div class="disp-accent-bar" style="background: #bae6fd;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Average Tenure</span>
+            </div>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">{% if average_tenure %}{{ average_tenure|floatformat:0 }}{% else %}0{% endif %} <span class="text-base font-semibold opacity-90">days</span></p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">{% if fresh_average_tenure %}{{ fresh_average_tenure|floatformat:0 }}{% else %}0{% endif %} days</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">{% if reloan_average_tenure %}{{ reloan_average_tenure|floatformat:0 }}{% else %}0{% endif %} days</span></span>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Collection Metrics Card - Full Width (Premium Enhanced) -->
+<div class="w-full mb-6">
+    <div class="disp-datatable-card rounded-2xl overflow-hidden relative shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:shadow-[0_18px_45px_rgba(15,23,42,0.1)] transition-all duration-300">
+        <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-full opacity-90" style="background: linear-gradient(180deg, #6366f1, #4f46e5);"></div>
+        <div class="p-6 pl-7">
+            <div class="flex flex-wrap items-center gap-4 mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-2xl shadow-md" style="background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(79,70,229,0.15));">
+                        <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Collection Amount As Of Date Range</h3>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 font-semibold uppercase tracking-wider mt-0.5">Total · Fresh · Reloan · Prepayment · On Time · Overdue</p>
+                    </div>
+                </div>
+                <div class="ml-auto rounded-2xl px-5 py-3 border border-indigo-200/60 dark:border-indigo-500/30 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/30 dark:to-slate-800/50">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-0.5">Total Collection</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight" data-kpi="collection_total">{% if collection_metrics %}{% if collection_metrics.fresh_collection_amount or collection_metrics.reloan_collection_amount %}{% with fresh=collection_metrics.fresh_collection_amount|default:0 %}{% with reloan=collection_metrics.reloan_collection_amount|default:0 %}₹{{ fresh|add:reloan|floatformat:0|intcomma }}{% endwith %}{% endwith %}{% elif collection_metrics.total_collection_amount %}₹{{ collection_metrics.total_collection_amount|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+                <div class="collection-metric-tile rounded-xl p-4 bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-600/50">
+                    <div class="flex items-center gap-2 mb-2"><span class="w-2.5 h-2.5 rounded-full bg-slate-500 shadow-sm"></span><span class="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">Total</span></div>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white tabular-nums leading-tight" data-kpi="collection_total_amount_display">{% if collection_metrics %}{% if collection_metrics.fresh_collection_amount or collection_metrics.reloan_collection_amount %}{% with fresh=collection_metrics.fresh_collection_amount|default:0 %}{% with reloan=collection_metrics.reloan_collection_amount|default:0 %}₹{{ fresh|add:reloan|floatformat:0|intcomma }}{% endwith %}{% endwith %}{% elif collection_metrics.total_collection_amount and collection_metrics.total_collection_amount > 0 %}₹{{ collection_metrics.total_collection_amount|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</p>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1" data-kpi="collection_total_count">{% if collection_metrics %}{% if collection_metrics.total_collection_count and collection_metrics.total_collection_count > 0 %}{{ collection_metrics.total_collection_count|intcomma }}{% else %}{% with fresh=collection_metrics.fresh_collection_count|default:0 reloan=collection_metrics.reloan_collection_count|default:0 %}{% if fresh or reloan %}{{ fresh|add:reloan|intcomma }}{% else %}0{% endif %}{% endwith %}{% endif %}{% else %}0{% endif %} count</p>
+                </div>
+                <div class="collection-metric-tile rounded-xl p-4 bg-emerald-50/70 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-700/40">
+                    <div class="flex items-center gap-2 mb-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></span><span class="text-emerald-700 dark:text-emerald-400 font-semibold text-xs uppercase tracking-wider">Fresh</span></div>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white tabular-nums leading-tight" data-kpi="collection_fresh_amount">{% if collection_metrics %}{% if collection_metrics.fresh_collection_amount %}₹{{ collection_metrics.fresh_collection_amount|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</p>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1" data-kpi="collection_fresh_count">{% if collection_metrics %}{% if collection_metrics.fresh_collection_count %}{{ collection_metrics.fresh_collection_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</p>
+                </div>
+                <div class="collection-metric-tile rounded-xl p-4 bg-sky-50/70 dark:bg-sky-900/20 border border-sky-200/50 dark:border-sky-700/40">
+                    <div class="flex items-center gap-2 mb-2"><span class="w-2.5 h-2.5 rounded-full bg-sky-500 shadow-sm"></span><span class="text-sky-700 dark:text-sky-400 font-semibold text-xs uppercase tracking-wider">Reloan</span></div>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white tabular-nums leading-tight" data-kpi="collection_reloan_amount">{% if collection_metrics %}{% if collection_metrics.reloan_collection_amount %}₹{{ collection_metrics.reloan_collection_amount|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</p>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1" data-kpi="collection_reloan_count">{% if collection_metrics %}{% if collection_metrics.reloan_collection_count %}{{ collection_metrics.reloan_collection_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</p>
+                </div>
+                <button onclick="openPrepaymentRecordsTable()" class="collection-metric-tile collection-metric-tile-clickable rounded-xl p-4 bg-amber-50/70 dark:bg-amber-900/20 border-2 border-amber-200/50 dark:border-amber-700/40 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-lg hover:-translate-y-0.5 transition-all text-left cursor-pointer group">
+                    <div class="flex items-center gap-2 mb-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm group-hover:scale-110 transition-transform"></span><span class="text-amber-700 dark:text-amber-400 font-semibold text-xs uppercase tracking-wider">Prepayment</span></div>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white tabular-nums leading-tight" data-kpi="collection_prepayment_amount">{% if collection_metrics %}{% if collection_metrics.prepayment_amount %}₹{{ collection_metrics.prepayment_amount|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</p>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1" data-kpi="collection_prepayment_count">{% if collection_metrics %}{% if collection_metrics.prepayment_count %}{{ collection_metrics.prepayment_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</p>
+                </button>
+                <button onclick="openOnTimeRecordsTable()" class="collection-metric-tile collection-metric-tile-clickable rounded-xl p-4 bg-blue-50/70 dark:bg-blue-900/20 border-2 border-blue-200/50 dark:border-blue-700/40 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-lg hover:-translate-y-0.5 transition-all text-left cursor-pointer group">
+                    <div class="flex items-center gap-2 mb-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm group-hover:scale-110 transition-transform"></span><span class="text-blue-700 dark:text-blue-400 font-semibold text-xs uppercase tracking-wider">On Time</span></div>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white tabular-nums leading-tight" data-kpi="collection_on_time">{% if collection_metrics %}{% if collection_metrics.due_date_amount %}₹{{ collection_metrics.due_date_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.on_time_collection %}₹{{ collection_metrics.on_time_collection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.onTimeCollection %}₹{{ collection_metrics.onTimeCollection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.on_time %}₹{{ collection_metrics.on_time|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.on_time_amount %}₹{{ collection_metrics.on_time_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.onTime %}₹{{ collection_metrics.onTime|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</p>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1" data-kpi="collection_due_date_count">{% if collection_metrics %}{% if collection_metrics.due_date_count %}{{ collection_metrics.due_date_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</p>
+                </button>
+                <button onclick="openOverdueRecordsTable()" class="collection-metric-tile collection-metric-tile-clickable rounded-xl p-4 bg-red-50/70 dark:bg-red-900/20 border-2 border-red-200/50 dark:border-red-700/40 hover:border-red-400 dark:hover:border-red-500 hover:shadow-lg hover:-translate-y-0.5 transition-all text-left cursor-pointer group">
+                    <div class="flex items-center gap-2 mb-2"><span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm group-hover:scale-110 transition-transform"></span><span class="text-red-700 dark:text-red-400 font-semibold text-xs uppercase tracking-wider">Overdue</span></div>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white tabular-nums leading-tight" data-kpi="collection_overdue">{% if collection_metrics %}{% if collection_metrics.overdue_amount %}₹{{ collection_metrics.overdue_amount|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overdue_collection %}₹{{ collection_metrics.overdue_collection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overdueCollection %}₹{{ collection_metrics.overdueCollection|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overdue %}₹{{ collection_metrics.overdue|add:"0"|floatformat:0|intcomma }}{% elif collection_metrics.overDue %}₹{{ collection_metrics.overDue|add:"0"|floatformat:0|intcomma }}{% else %}₹0{% endif %}{% else %}₹0{% endif %}</p>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1" data-kpi="collection_overdue_count">{% if collection_metrics %}{% if collection_metrics.overdue_count %}{{ collection_metrics.overdue_count|intcomma }}{% else %}0{% endif %}{% else %}0{% endif %} count</p>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -6,107 +6,245 @@
 {% block page_title %}Disbursal Summary{% endblock %}
 {% block page_subtitle %}Advanced performance insights and data visualization{% endblock %}
 
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    .disbursal-summary-page {
+        font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+        background: linear-gradient(to bottom right, #f8fafc, #eef2ff, #f0f9ff);
+        min-height: 100%;
+        padding-bottom: 2rem;
+        position: relative;
+    }
+    .dark .disbursal-summary-page {
+        background: linear-gradient(to bottom right, #0f172a, #1e1b4b, #0c4a6e);
+    }
+    .disbursal-summary-page::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+                          radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    .disbursal-summary-page > .mb-8 h1 {
+        font-size: 32px;
+        letter-spacing: -0.02em;
+    }
+    @media (min-width: 640px) {
+        .disbursal-summary-page > .mb-8 h1 { font-size: 36px; }
+    }
+    .disp-primary-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+    }
+    .disp-datatable-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(226, 232, 240, 0.7);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        border-radius: 1rem;
+    }
+    .dark .disp-datatable-card {
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(71, 85, 105, 0.5);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
+    .disbursal-summary-page .mb-6:has(#filter-form) > div:first-child {
+        background: rgba(255,255,255,0.75) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 1rem;
+        border: 1px solid rgba(226,232,240,0.7);
+        box-shadow: 0 12px 30px rgba(15,23,42,0.08);
+    }
+    .dark .disbursal-summary-page .mb-6:has(#filter-form) > div:first-child {
+        background: rgba(30,41,59,0.75) !important;
+        border-color: rgba(71,85,105,0.5);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+    }
+    .disbursal-summary-page #filter-form button[type="submit"] {
+        background: linear-gradient(to right, #4f46e5, #2563eb) !important;
+        color: #fff !important;
+        border: none;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .disbursal-summary-page #filter-form button[type="submit"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 45px rgba(15,23,42,0.12);
+    }
+    .disbursal-summary-page #main-content .group.rounded-xl {
+        border-radius: 1rem;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .disbursal-summary-page #main-content .group.rounded-xl:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+    }
+    .dark .disbursal-summary-page #main-content .group.rounded-xl {
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
+    .dark .disbursal-summary-page #main-content .group.rounded-xl:hover {
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+    }
+    .disp-kpi-card {
+        position: relative;
+        overflow: hidden;
+    }
+    .disp-kpi-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.12) 0%, transparent 50%),
+                          radial-gradient(circle at 80% 70%, rgba(255,255,255,0.06) 0%, transparent 40%);
+        pointer-events: none;
+    }
+    .disp-kpi-card .disp-accent-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        border-radius: 4px 0 0 4px;
+    }
+    .disp-chart-wrap {
+        border-radius: 1rem;
+        background: linear-gradient(180deg, rgba(248,250,252,0.8) 0%, rgba(241,245,249,0.4) 100%);
+        border: 1px solid rgba(226,232,240,0.6);
+    }
+    .dark .disp-chart-wrap {
+        background: linear-gradient(180deg, rgba(30,41,59,0.5) 0%, rgba(15,23,42,0.3) 100%);
+        border-color: rgba(71,85,105,0.4);
+    }
+    .disp-chart-legend {
+        border-radius: 0.75rem;
+        background: rgba(255,255,255,0.6);
+        border: 1px solid rgba(226,232,240,0.7);
+        padding: 0.25rem;
+        margin-top: 1rem;
+    }
+    .dark .disp-chart-legend {
+        background: rgba(15,23,42,0.4);
+        border-color: rgba(71,85,105,0.4);
+    }
+    .disp-legend-item {
+        border-radius: 0.5rem;
+        transition: background 0.2s, box-shadow 0.2s;
+    }
+    .disp-legend-item:hover {
+        box-shadow: 0 2px 8px rgba(15,23,42,0.06);
+    }
+    .dark .disp-legend-item:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}
+
+{% block kpi_cards %}
+{% include 'dashboard/partials/_disbursal_kpi_cards_premium.html' %}
+{% endblock %}
+
 {% block content %}
 <!-- Charts Section -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
     <!-- Disbursal by State Chart -->
-    <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
-        <div class="flex items-center justify-between mb-5">
-            <div class="flex-1 text-center">
-                <h3 class="text-lg font-bold mb-1.5 tracking-tight" style="color: #00072D;">Disbursal by State</h3>
-                <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Distribution across states</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button 
-                    onclick="openFullscreenChart('stateChart')"
-                    class="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
-                    style="background-color: rgba(0, 7, 45, 0.1); color: #00072D;"
-                    aria-label="View fullscreen"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+    <div class="disp-datatable-card rounded-2xl p-6 overflow-hidden relative hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)] transition-all duration-300">
+        <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-full opacity-90" style="background: linear-gradient(180deg, #3b82f6, #2563eb);"></div>
+        <div class="flex items-center justify-between mb-5 pl-1">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl shadow-sm" style="background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(37,99,235,0.1));">
+                    <svg class="w-5 h-5" style="color: rgb(59,130,246);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                </button>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white">Disbursal by State</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide mt-0.5">Distribution across states</p>
+                </div>
             </div>
+            <button onclick="openFullscreenChart('stateChart')" class="p-2 rounded-lg transition-all duration-200 hover:opacity-90 hover:scale-105 hover:shadow-md flex-shrink-0" style="background: rgba(59,130,246,0.12); color: #2563eb;" aria-label="View fullscreen">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+            </button>
         </div>
-        <div class="relative h-64">
-            <canvas id="stateChart"></canvas>
-        </div>
-        <!-- Scrollable Legend -->
-        <div id="stateLegend" class="mt-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-            <!-- Legend will be populated by Chart.js -->
+        <div class="disp-chart-wrap p-4 mt-1">
+            <div class="relative h-64">
+                <canvas id="stateChart"></canvas>
+            </div>
+            <div id="stateLegend" class="disp-chart-legend max-h-52 overflow-y-auto pr-1.5 custom-scrollbar"></div>
         </div>
     </div>
-    
+
     <!-- Disbursal by City Chart -->
-    <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
-        <div class="flex items-center justify-between mb-5">
-            <div class="flex-1 text-center">
-                <h3 class="text-lg font-bold mb-1.5 tracking-tight" style="color: #00072D;">Disbursal by City</h3>
-                <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Distribution across cities</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button 
-                    onclick="openFullscreenChart('cityChart')"
-                    class="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
-                    style="background-color: rgba(0, 7, 45, 0.1); color: #00072D;"
-                    aria-label="View fullscreen"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+    <div class="disp-datatable-card rounded-2xl p-6 overflow-hidden relative hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)] transition-all duration-300">
+        <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-full opacity-90" style="background: linear-gradient(180deg, #10b981, #059669);"></div>
+        <div class="flex items-center justify-between mb-5 pl-1">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl shadow-sm" style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.1));">
+                    <svg class="w-5 h-5" style="color: rgb(16,185,129);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                </button>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white">Disbursal by City</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide mt-0.5">Distribution across cities</p>
+                </div>
             </div>
+            <button onclick="openFullscreenChart('cityChart')" class="p-2 rounded-lg transition-all duration-200 hover:opacity-90 hover:scale-105 hover:shadow-md flex-shrink-0" style="background: rgba(16,185,129,0.12); color: #059669;" aria-label="View fullscreen">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+            </button>
         </div>
-        <div class="relative h-64">
-            <canvas id="cityChart"></canvas>
-        </div>
-        <!-- Scrollable Legend -->
-        <div id="cityLegend" class="mt-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-            <!-- Legend will be populated by Chart.js -->
+        <div class="disp-chart-wrap p-4 mt-1">
+            <div class="relative h-64">
+                <canvas id="cityChart"></canvas>
+            </div>
+            <div id="cityLegend" class="disp-chart-legend max-h-52 overflow-y-auto pr-1.5 custom-scrollbar"></div>
         </div>
     </div>
-    
+
     <!-- Disbursal by Lead Source Chart -->
-    <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
-        <div class="flex items-center justify-between mb-5">
-            <div class="flex-1 text-center">
-                <h3 class="text-lg font-bold mb-1.5 tracking-tight" style="color: #00072D;">Lead Source</h3>
-                <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Distribution by source</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button 
-                    onclick="openFullscreenChart('sourceChart')"
-                    class="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
-                    style="background-color: rgba(0, 7, 45, 0.1); color: #00072D;"
-                    aria-label="View fullscreen"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+    <div class="disp-datatable-card rounded-2xl p-6 overflow-hidden relative hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)] transition-all duration-300">
+        <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-full opacity-90" style="background: linear-gradient(180deg, #6366f1, #4f46e5);"></div>
+        <div class="flex items-center justify-between mb-5 pl-1">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl shadow-sm" style="background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(79,70,229,0.1));">
+                    <svg class="w-5 h-5" style="color: rgb(99,102,241);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
                     </svg>
-                </button>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white">Lead Source</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide mt-0.5">Distribution by source</p>
+                </div>
             </div>
+            <button onclick="openFullscreenChart('sourceChart')" class="p-2 rounded-lg transition-all duration-200 hover:opacity-90 hover:scale-105 hover:shadow-md flex-shrink-0" style="background: rgba(99,102,241,0.12); color: #4f46e5;" aria-label="View fullscreen">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+            </button>
         </div>
-        <div class="relative h-64">
-            <canvas id="sourceChart"></canvas>
-        </div>
-        <!-- Scrollable Legend -->
-        <div id="sourceLegend" class="mt-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-            <!-- Legend will be populated by Chart.js -->
+        <div class="disp-chart-wrap p-4 mt-1">
+            <div class="relative h-64">
+                <canvas id="sourceChart"></canvas>
+            </div>
+            <div id="sourceLegend" class="disp-chart-legend max-h-52 overflow-y-auto pr-1.5 custom-scrollbar"></div>
         </div>
     </div>
 </div>
 
-<!-- Empty State (if no data) - Show only if all charts have no data -->
-<div id="empty-state" class="hidden bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl p-12 text-center shadow-sm">
-    <svg class="w-16 h-16 text-gray-400 dark:text-slate-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-    <h3 class="text-lg font-semibold text-gray-700 dark:text-slate-300 mb-2">No data available</h3>
-    <p class="text-gray-500 dark:text-slate-500">No data found for the selected filters. Try adjusting your search criteria.</p>
+<!-- Empty State (if no data) -->
+<div id="empty-state" class="hidden disp-datatable-card rounded-2xl p-8 sm:p-12 text-center max-w-md mx-auto">
+    <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-4">
+        <svg class="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+    </div>
+    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">No data available</h3>
+    <p class="text-gray-600 dark:text-slate-400 text-sm">No data found for the selected filters. Try adjusting your search criteria.</p>
 </div>
 {% endblock %}
 
@@ -165,6 +303,10 @@ window.chartColors = [
     '#ec4899', // Pink
     '#ef4444', // Red
 ];
+
+if (typeof Chart !== 'undefined') {
+    Chart.defaults.font.family = "'Inter', sans-serif";
+}
 
 // Get current theme
 function getCurrentTheme() {
@@ -225,45 +367,40 @@ window.initializeCharts = function() {
                     datasets: [{
                         data: window.stateData.values,
                         backgroundColor: window.chartColors.slice(0, window.stateData.labels.length),
-                        borderColor: getCurrentTheme() === 'dark' ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                        borderColor: getCurrentTheme() === 'dark' ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.9)',
                         borderWidth: 2,
-                        hoverOffset: 4
+                        hoverOffset: 8
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: { padding: 8 },
                     plugins: {
-                        legend: {
-                            display: false // We'll use custom legend
-                        },
+                        legend: { display: false },
                         tooltip: {
                             backgroundColor: tooltipColors.backgroundColor,
                             titleColor: tooltipColors.titleColor,
                             bodyColor: tooltipColors.bodyColor,
                             borderColor: tooltipColors.borderColor,
-                            borderWidth: 1,
-                            padding: 12,
+                            borderWidth: 1.5,
+                            cornerRadius: 8,
+                            padding: 14,
+                            titleFont: { family: "'Inter', sans-serif", size: 13, weight: '600' },
+                            bodyFont: { family: "'Inter', sans-serif", size: 12 },
                             callbacks: {
-                                title: function(context) {
-                                    return context[0].label || '';
-                                },
+                                title: function(context) { return context[0].label || ''; },
                                 label: function(context) {
                                     const index = context.dataIndex;
                                     const disbursalValue = context.parsed || 0;
                                     const sanctionValue = window.stateData.sanction[index] || 0;
                                     const countValue = window.stateData.counts[index] || 0;
-                                    
-                                    // Calculate totals for percentages
                                     const totalDisbursal = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const totalSanction = window.stateData.sanction.reduce((a, b) => a + b, 0);
                                     const totalCount = window.stateData.counts.reduce((a, b) => a + b, 0);
-                                    
-                                    // Calculate percentages
                                     const disbursalPercentage = totalDisbursal > 0 ? ((disbursalValue / totalDisbursal) * 100).toFixed(1) : '0.0';
                                     const sanctionPercentage = totalSanction > 0 ? ((sanctionValue / totalSanction) * 100).toFixed(1) : '0.0';
                                     const countPercentage = totalCount > 0 ? ((countValue / totalCount) * 100).toFixed(1) : '0.0';
-                                    
                                     return [
                                         `Count: ${countValue.toLocaleString('en-IN')} (${countPercentage}%)`,
                                         `Sanction Amount: ₹${sanctionValue.toLocaleString('en-IN')} (${sanctionPercentage}%)`,
@@ -297,45 +434,40 @@ window.initializeCharts = function() {
                     datasets: [{
                         data: window.cityData.values,
                         backgroundColor: window.chartColors.slice(0, window.cityData.labels.length),
-                        borderColor: getCurrentTheme() === 'dark' ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                        borderColor: getCurrentTheme() === 'dark' ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.9)',
                         borderWidth: 2,
-                        hoverOffset: 4
+                        hoverOffset: 8
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: { padding: 8 },
                     plugins: {
-                        legend: {
-                            display: false // We'll use custom legend
-                        },
+                        legend: { display: false },
                         tooltip: {
                             backgroundColor: tooltipColors.backgroundColor,
                             titleColor: tooltipColors.titleColor,
                             bodyColor: tooltipColors.bodyColor,
                             borderColor: tooltipColors.borderColor,
-                            borderWidth: 1,
-                            padding: 12,
+                            borderWidth: 1.5,
+                            cornerRadius: 8,
+                            padding: 14,
+                            titleFont: { family: "'Inter', sans-serif", size: 13, weight: '600' },
+                            bodyFont: { family: "'Inter', sans-serif", size: 12 },
                             callbacks: {
-                                title: function(context) {
-                                    return context[0].label || '';
-                                },
+                                title: function(context) { return context[0].label || ''; },
                                 label: function(context) {
                                     const index = context.dataIndex;
                                     const disbursalValue = context.parsed || 0;
                                     const sanctionValue = window.cityData.sanction[index] || 0;
                                     const countValue = window.cityData.counts[index] || 0;
-                                    
-                                    // Calculate totals for percentages
                                     const totalDisbursal = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const totalSanction = window.cityData.sanction.reduce((a, b) => a + b, 0);
                                     const totalCount = window.cityData.counts.reduce((a, b) => a + b, 0);
-                                    
-                                    // Calculate percentages
                                     const disbursalPercentage = totalDisbursal > 0 ? ((disbursalValue / totalDisbursal) * 100).toFixed(1) : '0.0';
                                     const sanctionPercentage = totalSanction > 0 ? ((sanctionValue / totalSanction) * 100).toFixed(1) : '0.0';
                                     const countPercentage = totalCount > 0 ? ((countValue / totalCount) * 100).toFixed(1) : '0.0';
-                                    
                                     return [
                                         `Count: ${countValue.toLocaleString('en-IN')} (${countPercentage}%)`,
                                         `Sanction Amount: ₹${sanctionValue.toLocaleString('en-IN')} (${sanctionPercentage}%)`,
@@ -369,45 +501,40 @@ window.initializeCharts = function() {
                     datasets: [{
                         data: window.sourceData.values,
                         backgroundColor: window.chartColors.slice(0, window.sourceData.labels.length),
-                        borderColor: getCurrentTheme() === 'dark' ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                        borderColor: getCurrentTheme() === 'dark' ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.9)',
                         borderWidth: 2,
-                        hoverOffset: 4
+                        hoverOffset: 8
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: { padding: 8 },
                     plugins: {
-                        legend: {
-                            display: false // We'll use custom legend
-                        },
+                        legend: { display: false },
                         tooltip: {
                             backgroundColor: tooltipColors.backgroundColor,
                             titleColor: tooltipColors.titleColor,
                             bodyColor: tooltipColors.bodyColor,
                             borderColor: tooltipColors.borderColor,
-                            borderWidth: 1,
-                            padding: 12,
+                            borderWidth: 1.5,
+                            cornerRadius: 8,
+                            padding: 14,
+                            titleFont: { family: "'Inter', sans-serif", size: 13, weight: '600' },
+                            bodyFont: { family: "'Inter', sans-serif", size: 12 },
                             callbacks: {
-                                title: function(context) {
-                                    return context[0].label || '';
-                                },
+                                title: function(context) { return context[0].label || ''; },
                                 label: function(context) {
                                     const index = context.dataIndex;
                                     const disbursalValue = context.parsed || 0;
                                     const sanctionValue = window.sourceData.sanction[index] || 0;
                                     const countValue = window.sourceData.counts[index] || 0;
-                                    
-                                    // Calculate totals for percentages
                                     const totalDisbursal = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const totalSanction = window.sourceData.sanction.reduce((a, b) => a + b, 0);
                                     const totalCount = window.sourceData.counts.reduce((a, b) => a + b, 0);
-                                    
-                                    // Calculate percentages
                                     const disbursalPercentage = totalDisbursal > 0 ? ((disbursalValue / totalDisbursal) * 100).toFixed(1) : '0.0';
                                     const sanctionPercentage = totalSanction > 0 ? ((sanctionValue / totalSanction) * 100).toFixed(1) : '0.0';
                                     const countPercentage = totalCount > 0 ? ((countValue / totalCount) * 100).toFixed(1) : '0.0';
-                                    
                                     return [
                                         `Count: ${countValue.toLocaleString('en-IN')} (${countPercentage}%)`,
                                         `Sanction Amount: ₹${sanctionValue.toLocaleString('en-IN')} (${sanctionPercentage}%)`,
@@ -484,37 +611,37 @@ window.renderCustomLegend = function(containerId, labels, values, colors, sancti
         const color = colors[index % colors.length];
         
         const legendItem = document.createElement('div');
-        legendItem.className = 'flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors';
+        legendItem.className = 'disp-legend-item flex items-center justify-between gap-3 py-2.5 px-3 rounded-xl hover:bg-white/80 dark:hover:bg-slate-600/40 border border-transparent hover:border-slate-200/60 dark:hover:border-slate-500/40';
         if (isSourceLegend) {
             legendItem.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <div class="w-4 h-4 rounded flex-shrink-0" style="background-color: ${color}"></div>
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-3.5 h-3.5 rounded-md flex-shrink-0 shadow-sm ring-1 ring-black/5" style="background-color: ${color}"></div>
                     <div class="flex flex-col min-w-0">
-                        <span class="text-sm font-medium text-gray-900 dark:text-slate-200">${label}</span>
-                        <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500 dark:text-slate-500 mt-0.5">
+                        <span class="text-sm font-semibold text-gray-900 dark:text-slate-100 truncate">${label}</span>
+                        <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                             <span>Count: <strong class="text-gray-700 dark:text-slate-300">${countValue.toLocaleString('en-IN')}</strong></span>
-                            <span class="text-green-600 dark:text-green-400">Fresh: <strong>${freshValue.toLocaleString('en-IN')}</strong></span>
+                            <span class="text-emerald-600 dark:text-emerald-400">Fresh: <strong>${freshValue.toLocaleString('en-IN')}</strong></span>
                             <span class="text-sky-600 dark:text-sky-400">Reloan: <strong>${reloanValue.toLocaleString('en-IN')}</strong></span>
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    <span class="text-sm font-medium text-gray-900 dark:text-slate-200">₹${sanctionValue.toLocaleString('en-IN')}</span>
-                    <span class="text-xs text-gray-500 dark:text-slate-500">${percentage}%</span>
+                <div class="flex flex-col items-end flex-shrink-0">
+                    <span class="text-sm font-bold text-gray-900 dark:text-slate-100 tabular-nums">₹${sanctionValue.toLocaleString('en-IN')}</span>
+                    <span class="text-xs font-medium text-slate-500 dark:text-slate-400">${percentage}%</span>
                 </div>
             `;
         } else {
             legendItem.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <div class="w-4 h-4 rounded" style="background-color: ${color}"></div>
-                    <div class="flex flex-col">
-                        <span class="text-sm text-gray-700 dark:text-slate-300">${label}</span>
-                        ${countValues ? `<span class="text-xs text-gray-500 dark:text-slate-500">Count: ${countValue.toLocaleString('en-IN')} (${countPercentage}%)</span>` : ''}
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-3.5 h-3.5 rounded-md flex-shrink-0 shadow-sm ring-1 ring-black/5" style="background-color: ${color}"></div>
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-sm font-semibold text-gray-900 dark:text-slate-100 truncate">${label}</span>
+                        ${countValues ? `<span class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Count: ${countValue.toLocaleString('en-IN')} (${countPercentage}%)</span>` : ''}
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-sm font-medium text-gray-900 dark:text-slate-200">₹${sanctionValue.toLocaleString('en-IN')}</span>
-                    <span class="text-xs text-gray-500 dark:text-slate-500">${percentage}%</span>
+                <div class="flex flex-col items-end flex-shrink-0">
+                    <span class="text-sm font-bold text-gray-900 dark:text-slate-100 tabular-nums">₹${sanctionValue.toLocaleString('en-IN')}</span>
+                    <span class="text-xs font-medium text-slate-500 dark:text-slate-400">${percentage}%</span>
                 </div>
             `;
         }

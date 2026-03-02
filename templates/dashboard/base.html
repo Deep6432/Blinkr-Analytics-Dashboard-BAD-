@@ -82,7 +82,7 @@
             
             <!-- Main Content -->
             <main class="flex-1 overflow-y-auto transition-all duration-300 lg:ml-64" id="main-content-wrapper" style="margin-top: 4rem; height: calc(100vh - 4rem);">
-                <div id="main-content" class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+                <div id="main-content" class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 {% if request.resolver_match.url_name == 'gst_summary' %}gst-summary-page max-w-[1400px]{% endif %}{% if request.resolver_match.url_name == 'collection_summary' %} collection-summary-page max-w-[1400px]{% endif %}{% if request.resolver_match.url_name == 'disbursal_summary' or request.resolver_match.url_name == 'dashboard' %} disbursal-summary-page max-w-[1400px]{% endif %}">
                     <!-- Page Header -->
                     <div class="mb-8">
                         <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">{% block page_title %}Dashboard{% endblock %}</h1>

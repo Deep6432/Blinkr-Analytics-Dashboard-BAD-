@@ -24,5 +24,6 @@ urlpatterns = [
     path('sales-performance/', views.sale_performance, name='sale_performance'),
     path('aum-report/', views.aum_report, name='aum_report'),
     path('api/aum-report/', views.api_aum_report, name='api_aum_report'),
+    path('gst-summary/', views.gst_summary, name='gst_summary'),
 ]
 

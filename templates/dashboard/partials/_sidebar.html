@@ -155,6 +155,23 @@
             </div>
         </a>
         {% endif %}
+        {% if user_allowed_pages is None or 'gst_summary' in user_allowed_pages %}
+        <!-- GST Summary -->
+        <a 
+            href="{% url 'gst_summary' %}" 
+            class="sidebar-nav-item group relative flex items-center px-3 py-2.5 rounded-xl transition-all duration-300 {% if request.resolver_match.url_name == 'gst_summary' %}text-white active-tab{% else %}text-white/50 hover:text-white{% endif %}"
+            title="GST Summary"
+        >
+            <div class="flex items-center gap-3 w-full">
+                <div class="flex items-center justify-center w-9 h-9 rounded-lg {% if request.resolver_match.url_name == 'gst_summary' %}bg-white/25 shadow-md{% else %}bg-white/8 group-hover:bg-white/15{% endif %} transition-all duration-300">
+                    <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5 5l6-6M3 21h18M3 10h18M3 7h18" />
+                    </svg>
+                </div>
+                <span id="nav-gst-summary" class="font-semibold sidebar-text transition-opacity duration-300 text-sm tracking-wide">GST Summary</span>
+            </div>
+        </a>
+        {% endif %}
     </nav>
 </aside>
 
@@ -234,6 +251,14 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 <span class="font-medium">AUM Report</span>
+            </a>
+            {% endif %}
+            {% if user_allowed_pages is None or 'gst_summary' in user_allowed_pages %}
+            <a href="{% url 'gst_summary' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'gst_summary' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50 hover:text-gray-900{% endif %}" onclick="toggleMobileSidebar()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5 5l6-6M3 21h18M3 10h18M3 7h18" />
+                </svg>
+                <span class="font-medium">GST Summary</span>
             </a>
             {% endif %}
         </nav>

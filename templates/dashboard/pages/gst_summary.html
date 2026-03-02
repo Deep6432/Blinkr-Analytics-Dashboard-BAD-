@@ -1,0 +1,292 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load humanize %}
+{% load indian_number %}
+
+{% block title %}GST Summary - Blinkr Analytics Dashboard{% endblock %}
+
+{% block page_title %}GST Summary{% endblock %}
+{% block page_subtitle %}Data fetched via GST Insights API{% endblock %}
+
+{% block filters %}
+{% include 'dashboard/partials/_gst_filter_card.html' %}
+{% endblock %}
+
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    .gst-summary-page {
+        font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+        background: linear-gradient(to bottom right, #f8fafc, #eef2ff, #f0f9ff);
+        min-height: 100%;
+        padding-bottom: 2rem;
+        position: relative;
+    }
+    .dark .gst-summary-page {
+        background: linear-gradient(to bottom right, #0f172a, #1e1b4b, #0c4a6e);
+    }
+    .gst-summary-page > .mb-8 h1 {
+        font-size: 32px;
+        letter-spacing: -0.02em;
+    }
+    @media (min-width: 640px) {
+        .gst-summary-page > .mb-8 h1 {
+            font-size: 36px;
+        }
+    }
+    .gst-summary-page::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+                          radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    .gst-primary-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+    }
+    .gst-kpi-card {
+        position: relative;
+        overflow: hidden;
+    }
+    .gst-kpi-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.12) 0%, transparent 50%),
+                          radial-gradient(circle at 80% 70%, rgba(255,255,255,0.06) 0%, transparent 40%);
+        pointer-events: none;
+    }
+    .gst-kpi-card .accent-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        border-radius: 4px 0 0 4px;
+    }
+    .gst-datatable-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(226, 232, 240, 0.7);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        border-radius: 1rem;
+    }
+    .dark .gst-datatable-card {
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(71, 85, 105, 0.5);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
+    .gst-table-wrap {
+        max-height: 28rem;
+        overflow: auto;
+    }
+    .gst-table-wrap thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(248, 250, 252, 0.95);
+        backdrop-filter: blur(8px);
+    }
+    .dark .gst-table-wrap thead th {
+        background: rgba(15, 23, 42, 0.95);
+    }
+    .gst-table-wrap tbody tr:hover {
+        background: rgba(99, 102, 241, 0.06);
+    }
+    .dark .gst-table-wrap tbody tr:hover {
+        background: rgba(99, 102, 241, 0.12);
+    }
+    .gst-table-wrap tbody tr:nth-child(even) {
+        background: rgba(241, 245, 249, 0.5);
+    }
+    .dark .gst-table-wrap tbody tr:nth-child(even) {
+        background: rgba(30, 41, 59, 0.5);
+    }
+    .gst-table-wrap tbody tr:nth-child(even):hover,
+    .gst-table-wrap tbody tr:nth-child(odd):hover {
+        background: rgba(99, 102, 241, 0.08);
+    }
+    .dark .gst-table-wrap tbody tr:nth-child(even):hover,
+    .dark .gst-table-wrap tbody tr:nth-child(odd):hover {
+        background: rgba(99, 102, 241, 0.15);
+    }
+    .gst-numeric { text-align: right; font-variant-numeric: tabular-nums; }
+    .gst-skeleton { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: gst-skeleton 1.2s ease-in-out infinite; border-radius: 6px; }
+    .dark .gst-skeleton { background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes gst-skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>
+{% endblock %}
+
+{% block kpi_cards %}
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6">
+    <div class="gst-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #00072D 0%, #0a1628 100%);">
+        <div class="accent-bar" style="background: #60a5fa;"></div>
+        <div class="relative flex items-start justify-between z-[1] pl-2">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                    </span>
+                    <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Total Records</span>
+                </div>
+                <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">{{ total_records|default:0|intcomma }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="gst-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);">
+        <div class="accent-bar" style="background: #bae6fd;"></div>
+        <div class="relative flex items-start justify-between z-[1] pl-2">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                    </span>
+                    <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Gross Processing Fee Gst</span>
+                </div>
+                <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{{ gross_processing_fee_gst|default:0|floatformat:0|intcomma }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="gst-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">
+        <div class="accent-bar" style="background: #93c5fd;"></div>
+        <div class="relative flex items-start justify-between z-[1] pl-2">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>
+                    </span>
+                    <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Pf Percent</span>
+                </div>
+                <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">{{ pf_percent|default:0|floatformat:2 }}%</p>
+            </div>
+        </div>
+    </div>
+    <div class="gst-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.12)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">
+        <div class="accent-bar" style="background: #86efac;"></div>
+        <div class="relative flex items-start justify-between z-[1] pl-2">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </span>
+                    <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Pf Amount</span>
+                </div>
+                <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{{ pf_amount|default:0|floatformat:0|intcomma }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 relative">
+    {% if api_error %}
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-sm text-red-700 dark:text-red-200">
+            <strong>Error:</strong> {{ api_error }}
+        </div>
+    {% endif %}
+
+    {% if gst_data %}
+    <div class="gst-datatable-card rounded-2xl overflow-hidden p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">GST Data</h2>
+            <div class="flex items-center gap-3 flex-wrap">
+                <span class="text-sm text-gray-500 dark:text-slate-400 font-medium">
+                    {{ date_from }} – {{ date_to }}
+                </span>
+                <button type="button" onclick="exportGstToExcel()" class="gst-primary-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold text-sm shadow-lg hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Export to Excel
+                </button>
+            </div>
+        </div>
+        <div class="gst-table-wrap overflow-x-auto overflow-y-auto rounded-lg border border-slate-200/70 dark:border-slate-600/50">
+            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                <thead>
+                    <tr>
+                        {% if gst_data.0 %}
+                            {% for key in gst_data.0.keys %}
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">{{ key|replace:"_| "|title }}</th>
+                            {% endfor %}
+                        {% else %}
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">No Data</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for row in gst_data %}
+                        <tr class="transition-colors">
+                            {% for key, value in row.items %}
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200 {% if 'amount' in key|lower or 'total' in key|lower or 'value' in key|lower or 'price' in key|lower or 'gst' in key|lower or 'percent' in key|lower %}gst-numeric{% endif %}">
+                                    {% if value == None or value == "" %}
+                                        –
+                                    {% elif value|add:"0" == value|add:"0" %}
+                                        {% if "amount" in key|lower or "total" in key|lower or "value" in key|lower or "price" in key|lower or "gst" in key|lower %}
+                                            ₹{{ value|floatformat:0|intcomma }}
+                                        {% else %}
+                                            {{ value|intcomma }}
+                                        {% endif %}
+                                    {% else %}
+                                        {{ value }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif not api_error %}
+    <div class="flex items-center justify-center min-h-[50vh]">
+        <div class="gst-datatable-card rounded-2xl p-8 sm:p-12 max-w-md w-full text-center">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5 5l6-6M3 21h18M3 10h18M3 7h18" />
+                </svg>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">No Data Available</h3>
+            <p class="text-gray-600 dark:text-slate-400 text-sm sm:text-base">No GST data found for the selected date range. Try adjusting your filters.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if gst_data %}
+<script>
+(function() {
+    const gstData = {{ gst_data_json|safe }};
+    window.exportGstToExcel = function() {
+        if (!gstData || gstData.length === 0) {
+            alert('No data to export.');
+            return;
+        }
+        const headers = Object.keys(gstData[0]);
+        function escapeCsv(val) {
+            var s = String(val == null ? '' : val);
+            return s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0 ? '"' + s.replace(/"/g, '""') + '"' : s;
+        }
+        var rows = [headers.map(escapeCsv).join(',')];
+        gstData.forEach(function(row) {
+            rows.push(headers.map(function(h) { return escapeCsv(row[h]); }).join(','));
+        });
+        var csv = rows.join('\n');
+        var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'GST_Data_{{ date_from }}_to_{{ date_to }}.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+})();
+</script>
+{% endif %}
+{% endblock %}

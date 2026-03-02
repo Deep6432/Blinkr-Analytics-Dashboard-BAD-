@@ -9,204 +9,286 @@
 {% endblock %}
 {% block page_subtitle %}Data from `insights/v2/collection_summary` only{% endblock %}
 
-{# Use the shared Disbursal-style filter panel from base.html (#}
-{# Base includes `dashboard/partials/_filters.html` by default #}
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    .collection-summary-page {
+        font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+        background: linear-gradient(to bottom right, #f8fafc, #eef2ff, #f0f9ff);
+        min-height: 100%;
+        padding-bottom: 2rem;
+        position: relative;
+    }
+    .dark .collection-summary-page {
+        background: linear-gradient(to bottom right, #0f172a, #1e1b4b, #0c4a6e);
+    }
+    .collection-summary-page::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+                          radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    .collection-summary-page > .mb-8 h1 {
+        font-size: 32px;
+        letter-spacing: -0.02em;
+    }
+    @media (min-width: 640px) {
+        .collection-summary-page > .mb-8 h1 { font-size: 36px; }
+    }
+    .coll-primary-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+    }
+    .coll-kpi-card {
+        position: relative;
+        overflow: hidden;
+    }
+    .coll-kpi-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.12) 0%, transparent 50%),
+                          radial-gradient(circle at 80% 70%, rgba(255,255,255,0.06) 0%, transparent 40%);
+        pointer-events: none;
+    }
+    .coll-kpi-card .accent-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        border-radius: 4px 0 0 4px;
+    }
+    .coll-datatable-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(226, 232, 240, 0.7);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        border-radius: 1rem;
+    }
+    .dark .coll-datatable-card {
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(71, 85, 105, 0.5);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
+    .coll-table-wrap thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(248, 250, 252, 0.95);
+        backdrop-filter: blur(8px);
+    }
+    .dark .coll-table-wrap thead th {
+        background: rgba(15, 23, 42, 0.95);
+    }
+    .coll-table-wrap tbody tr:hover {
+        background: rgba(99, 102, 241, 0.06);
+    }
+    .dark .coll-table-wrap tbody tr:hover {
+        background: rgba(99, 102, 241, 0.12);
+    }
+    .coll-table-wrap tbody tr:nth-child(even) { background: rgba(241, 245, 249, 0.5); }
+    .dark .coll-table-wrap tbody tr:nth-child(even) { background: rgba(30, 41, 59, 0.5); }
+    .coll-table-wrap tbody tr:nth-child(even):hover,
+    .coll-table-wrap tbody tr:nth-child(odd):hover {
+        background: rgba(99, 102, 241, 0.08);
+    }
+    .dark .coll-table-wrap tbody tr:nth-child(even):hover,
+    .dark .coll-table-wrap tbody tr:nth-child(odd):hover {
+        background: rgba(99, 102, 241, 0.15);
+    }
+    .coll-numeric { text-align: right; font-variant-numeric: tabular-nums; }
+    .amount-received-chart-wrap {
+        background: linear-gradient(180deg, rgba(248,250,252,0.6) 0%, rgba(241,245,249,0.25) 100%);
+    }
+    .dark .amount-received-chart-wrap {
+        background: linear-gradient(180deg, rgba(30,41,59,0.4) 0%, rgba(15,23,42,0.25) 100%);
+    }
+    /* Filter panel glass + primary Apply button */
+    .collection-summary-page .mb-6:has(#filter-form) > div:first-child {
+        background: rgba(255,255,255,0.75) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 1rem;
+        border: 1px solid rgba(226,232,240,0.7);
+        box-shadow: 0 12px 30px rgba(15,23,42,0.08);
+    }
+    .dark .collection-summary-page .mb-6:has(#filter-form) > div:first-child {
+        background: rgba(30,41,59,0.75) !important;
+        border-color: rgba(71,85,105,0.5);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+    }
+    .collection-summary-page #filter-form button[type="submit"] {
+        background: linear-gradient(to right, #4f46e5, #2563eb) !important;
+        color: #fff !important;
+        border: none;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .collection-summary-page #filter-form button[type="submit"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 45px rgba(15,23,42,0.12);
+    }
+</style>
+{% endblock %}
+
+{# Filter uses shared _filters.html; Apply button styled via .collection-summary-page #filter-form in extra_head #}
 
 {% block kpi_cards %}
-<!-- Collection Summary KPI Cards -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
-    <!-- 1 -->
-    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
-        <div class="relative flex items-start justify-between mb-4">
-            <div class="flex-1">
-                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Total Applications</p>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">{{ total_applications|default:"0"|intcomma }}</p>
+<!-- Collection Summary KPI Cards (premium fintech style) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-6 mb-6">
+    <!-- 1. Total Applications -->
+    <div class="coll-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #00072D 0%, #0a1628 100%);">
+        <div class="accent-bar" style="background: #60a5fa;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Total Applications</span>
             </div>
-        </div>
-        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">{{ fresh_total_applications|default:"0"|intcomma }}</span>
-            </span>
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">{{ reloan_total_applications|default:"0"|intcomma }}</span>
-            </span>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">{{ total_applications|default:"0"|intcomma }}</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">{{ fresh_total_applications|default:"0"|intcomma }}</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">{{ reloan_total_applications|default:"0"|intcomma }}</span></span>
+            </div>
         </div>
     </div>
-    <!-- 2 -->
-    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
-        <div class="relative flex items-start justify-between mb-4">
-            <div class="flex-1">
-                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Principal Amount</p>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ principal_amount|default:"0"|floatformat:0|intcomma }}</p>
+    <!-- 2. Principal Amount -->
+    <div class="coll-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);">
+        <div class="accent-bar" style="background: #5eead4;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Principal Amount</span>
             </div>
-        </div>
-        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_principal_amount|default:"0"|floatformat:0|intcomma }}</span>
-            </span>
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_principal_amount|default:"0"|floatformat:0|intcomma }}</span>
-            </span>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{{ principal_amount|default:"0"|floatformat:0|intcomma }}</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{{ fresh_principal_amount|default:"0"|floatformat:0|intcomma }}</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{{ reloan_principal_amount|default:"0"|floatformat:0|intcomma }}</span></span>
+            </div>
         </div>
     </div>
-    <!-- 3 -->
-    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
-        <div class="relative flex items-start justify-between mb-4">
-            <div class="flex-1">
-                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Net Disbursed</p>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ net_disbursal|default:"0"|floatformat:0|intcomma }}</p>
+    <!-- 3. Net Disbursed -->
+    <div class="coll-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);">
+        <div class="accent-bar" style="background: #93c5fd;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Net Disbursed</span>
             </div>
-        </div>
-        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_net_disbursal|default:"0"|floatformat:0|intcomma }}</span>
-            </span>
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_net_disbursal|default:"0"|floatformat:0|intcomma }}</span>
-            </span>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{{ net_disbursal|default:"0"|floatformat:0|intcomma }}</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{{ fresh_net_disbursal|default:"0"|floatformat:0|intcomma }}</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{{ reloan_net_disbursal|default:"0"|floatformat:0|intcomma }}</span></span>
+            </div>
         </div>
     </div>
-    <!-- 4 -->
-    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
-        <div class="relative flex items-start justify-between mb-4">
-            <div class="flex-1">
-                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Repayment Amount</p>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ repayment_amount|default:"0"|floatformat:0|intcomma }}</p>
+    <!-- 4. Repayment Amount -->
+    <div class="coll-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #166534 0%, #15803d 100%);">
+        <div class="accent-bar" style="background: #86efac;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Repayment Amount</span>
             </div>
-        </div>
-        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_repayment_amount|default:"0"|floatformat:0|intcomma }}</span>
-            </span>
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_repayment_amount|default:"0"|floatformat:0|intcomma }}</span>
-            </span>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{{ repayment_amount|default:"0"|floatformat:0|intcomma }}</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{{ fresh_repayment_amount|default:"0"|floatformat:0|intcomma }}</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{{ reloan_repayment_amount|default:"0"|floatformat:0|intcomma }}</span></span>
+            </div>
         </div>
     </div>
-    <!-- 5 -->
-    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
-        <div class="relative flex items-start justify-between mb-4">
-            <div class="flex-1">
-                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Collected Amount</p>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ collected_amount|default:"0"|floatformat:0|intcomma }}</p>
-                <p class="text-sm font-semibold text-gray-600 dark:text-slate-400 mt-1" style="font-size: 12px;">Collection %: {{ collection_percentage|default:"0"|floatformat:2 }}%</p>
+    <!-- 5. Collected Amount -->
+    <div class="coll-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);">
+        <div class="accent-bar" style="background: #a5b4fc;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Collected Amount</span>
             </div>
-        </div>
-        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_collected_amount|default:"0"|floatformat:0|intcomma }}</span>
-                <span class="text-gray-500 dark:text-slate-500 text-xs">({{ fresh_collection_percentage|default:"0"|floatformat:2 }}%)</span>
-            </span>
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_collected_amount|default:"0"|floatformat:0|intcomma }}</span>
-                <span class="text-gray-500 dark:text-slate-500 text-xs">({{ reloan_collection_percentage|default:"0"|floatformat:2 }}%)</span>
-            </span>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{{ collected_amount|default:"0"|floatformat:0|intcomma }}</p>
+            <p class="text-xs font-semibold opacity-90 mt-1">Collection %: {{ collection_percentage|default:"0"|floatformat:2 }}%</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{{ fresh_collected_amount|default:"0"|floatformat:0|intcomma }}</span> <span class="opacity-80">({{ fresh_collection_percentage|default:"0"|floatformat:2 }}%)</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{{ reloan_collected_amount|default:"0"|floatformat:0|intcomma }}</span> <span class="opacity-80">({{ reloan_collection_percentage|default:"0"|floatformat:2 }}%)</span></span>
+            </div>
         </div>
     </div>
-    <!-- 6 -->
-    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
-        <div class="relative flex items-start justify-between mb-4">
-            <div class="flex-1">
-                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Pending Collection</p>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ pending_collection|default:"0"|floatformat:0|intcomma }}</p>
-                <p class="text-gray-500 dark:text-slate-500 text-xs mt-1 font-bold">Pending Collection %: {{ pending_collection_percentage|default:"0"|floatformat:2 }}% (of Repayment Amount)</p>
+    <!-- 6. Pending Collection -->
+    <div class="coll-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);">
+        <div class="accent-bar" style="background: #c4b5fd;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Pending Collection</span>
             </div>
-        </div>
-        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_pending_collection|default:"0"|floatformat:0|intcomma }}</span>
-                <span class="text-gray-500 dark:text-slate-500 text-xs">({{ fresh_pending_collection_percentage|default:"0"|floatformat:2 }}%)</span>
-            </span>
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_pending_collection|default:"0"|floatformat:0|intcomma }}</span>
-                <span class="text-gray-500 dark:text-slate-500 text-xs">({{ reloan_pending_collection_percentage|default:"0"|floatformat:2 }}%)</span>
-            </span>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{{ pending_collection|default:"0"|floatformat:0|intcomma }}</p>
+            <p class="text-xs font-semibold opacity-90 mt-1">Pending %: {{ pending_collection_percentage|default:"0"|floatformat:2 }}%</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{{ fresh_pending_collection|default:"0"|floatformat:0|intcomma }}</span> <span class="opacity-80">({{ fresh_pending_collection_percentage|default:"0"|floatformat:2 }}%)</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{{ reloan_pending_collection|default:"0"|floatformat:0|intcomma }}</span> <span class="opacity-80">({{ reloan_pending_collection_percentage|default:"0"|floatformat:2 }}%)</span></span>
+            </div>
         </div>
     </div>
-    <!-- 7 -->
-    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
-        <div class="relative flex items-start justify-between mb-4">
-            <div class="flex-1">
-                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Principal Outstanding</p>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ pending_principal|default:"0"|floatformat:0|intcomma }}</p>
-                <p class="text-gray-500 dark:text-slate-500 text-xs mt-1 font-bold">Principal Outstanding %: {{ pending_principal_percentage|default:"0"|floatformat:2 }}% (of Principal Amount)</p>
+    <!-- 7. Principal Outstanding -->
+    <div class="coll-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #b45309 0%, #ea580c 100%);">
+        <div class="accent-bar" style="background: #fed7aa;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Principal Outstanding</span>
             </div>
-        </div>
-        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_pending_principal|default:"0"|floatformat:0|intcomma }}</span>
-                <span class="text-gray-500 dark:text-slate-500 text-xs">({{ fresh_pending_principal_percentage|default:"0"|floatformat:2 }}%)</span>
-            </span>
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_pending_principal|default:"0"|floatformat:0|intcomma }}</span>
-                <span class="text-gray-500 dark:text-slate-500 text-xs">({{ reloan_pending_principal_percentage|default:"0"|floatformat:2 }}%)</span>
-            </span>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{{ pending_principal|default:"0"|floatformat:0|intcomma }}</p>
+            <p class="text-xs font-semibold opacity-90 mt-1">Outstanding %: {{ pending_principal_percentage|default:"0"|floatformat:2 }}%</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{{ fresh_pending_principal|default:"0"|floatformat:0|intcomma }}</span> <span class="opacity-80">({{ fresh_pending_principal_percentage|default:"0"|floatformat:2 }}%)</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{{ reloan_pending_principal|default:"0"|floatformat:0|intcomma }}</span> <span class="opacity-80">({{ reloan_pending_principal_percentage|default:"0"|floatformat:2 }}%)</span></span>
+            </div>
         </div>
     </div>
-    <!-- 8 -->
-    <div class="group bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 shadow-sm overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
-        <div class="relative flex items-start justify-between mb-4">
-            <div class="flex-1">
-                <p class="text-xs font-semibold mb-2 uppercase tracking-wider" style="color: #00072D; font-size: 10px;">Principal Collection Excl. 90+ DPD</p>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums leading-tight" style="font-size: 20px;">₹{{ principal_collection_excl_90_dpd|default:"0"|floatformat:0|intcomma }}</p>
+    <!-- 8. Principal Collection Excl. 90+ DPD -->
+    <div class="coll-kpi-card group rounded-2xl p-5 sm:p-6 transition-all duration-300 overflow-hidden relative min-w-0 text-white border border-white/10 shadow-[0_12px_30px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]" style="background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);">
+        <div class="accent-bar" style="background: #bae6fd;"></div>
+        <div class="relative z-[1] pl-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                </span>
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-95" style="font-size: 11px;">Principal Coll. Excl. 90+ DPD</span>
             </div>
-        </div>
-        <div class="relative flex flex-col gap-2 text-xs pt-4 border-t border-gray-100 dark:border-slate-700">
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Fresh:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ fresh_principal_collection_excl_90_dpd|default:"0"|floatformat:0|intcomma }}</span>
-            </span>
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                <span class="text-gray-600 dark:text-slate-400 font-medium" style="font-size: 10px;">Reloan:</span> 
-                <span class="text-gray-900 dark:text-white font-bold">₹{{ reloan_principal_collection_excl_90_dpd|default:"0"|floatformat:0|intcomma }}</span>
-            </span>
+            <p class="text-2xl sm:text-[28px] font-bold tabular-nums leading-tight tracking-tight">₹{{ principal_collection_excl_90_dpd|default:"0"|floatformat:0|intcomma }}</p>
+            <div class="flex flex-col gap-1.5 text-xs pt-4 mt-4 border-t border-white/20">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="opacity-90">Fresh:</span> <span class="font-bold">₹{{ fresh_principal_collection_excl_90_dpd|default:"0"|floatformat:0|intcomma }}</span></span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300"></span><span class="opacity-90">Reloan:</span> <span class="font-bold">₹{{ reloan_principal_collection_excl_90_dpd|default:"0"|floatformat:0|intcomma }}</span></span>
+            </div>
         </div>
     </div>
 </div>
 <!-- DPD Bucket Details Modal -->
 <div id="dpdBucketModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeDPDBucketModal()"></div>
-        <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-7xl sm:w-full">
-            <div class="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeDPDBucketModal()"></div>
+        <div class="inline-block align-bottom rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-7xl sm:w-full bg-white/90 dark:bg-slate-800/95 backdrop-blur-md border border-slate-200/70 dark:border-slate-700/70">
+            <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="modal-title">
                         DPD Bucket Details: <span id="modalDpdBucket"></span>
@@ -241,10 +323,8 @@
                     <span class="text-sm text-gray-500 dark:text-slate-400">
                         Total Records: <span id="dpdBucketTotalCount" class="font-semibold">0</span>
                     </span>
-                    <button type="button" onclick="exportDPDBucketToExcel()" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
+                    <button type="button" onclick="exportDPDBucketToExcel()" class="coll-primary-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold text-sm shadow-lg hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)] transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         Export to Excel
                     </button>
                 </div>
@@ -264,24 +344,24 @@
     {% endif %}
 
     <!-- DPD Bucket Distribution -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">DPD Bucket Distribution</h2>
+    <div class="coll-datatable-card rounded-2xl overflow-hidden p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">DPD Bucket Distribution</h2>
         {% if dpd_bucket_distribution %}
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-                    <thead class="bg-gray-50 dark:bg-slate-900">
+            <div class="overflow-x-auto coll-table-wrap rounded-lg border border-slate-200/70 dark:border-slate-600/50">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead>
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">DPD Bucket</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Count</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Amount</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">DPD Bucket</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Count</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Amount</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         {% for b in dpd_bucket_distribution %}
-                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer" onclick="openDPDBucketDetails('{{ b.dpd_bucket|escapejs }}')" title="Click to view details">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">{{ b.dpd_bucket|default:"-" }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">{{ b.count|default:"0"|intcomma }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">₹{{ b.amount|default:"0"|floatformat:0|intcomma }}</td>
+                            <tr class="cursor-pointer transition-colors" onclick="openDPDBucketDetails('{{ b.dpd_bucket|escapejs }}')" title="Click to view details">
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">{{ b.dpd_bucket|default:"-" }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">{{ b.count|default:"0"|intcomma }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200 coll-numeric">₹{{ b.amount|default:"0"|floatformat:0|intcomma }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -293,21 +373,29 @@
     </div>
 
     <!-- Amount Received Over Time -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Amount Received Over Time</h2>
-                <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">Repayment Amount, Net Disbursal and Count</p>
+    <div class="coll-datatable-card rounded-2xl p-6 overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-full opacity-90" style="background: linear-gradient(180deg, #f97316, #ea580c);"></div>
+        <div class="flex items-center justify-between mb-5 pl-1">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl shadow-sm" style="background: linear-gradient(135deg, rgba(249,115,22,0.15), rgba(234,88,12,0.1));">
+                    <svg class="w-5 h-5" style="color: rgb(249,115,22);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white">Amount Received Over Time</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide mt-0.5">Repayment Amount, Net Disbursal and Count</p>
+                </div>
             </div>
         </div>
-        <div style="position: relative; height: 380px;">
+        <div class="amount-received-chart-wrap relative rounded-xl overflow-hidden border border-slate-200/50 dark:border-slate-600/40" style="height: 400px;">
             <canvas id="amountReceivedChart"></canvas>
         </div>
     </div>
 
     <!-- Received Amount by State -->
-    <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+    <div class="coll-datatable-card rounded-2xl p-6 overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-full opacity-90" style="background: linear-gradient(180deg, #10b981, #059669);"></div>
         <div class="flex items-center justify-between mb-5">
             <div class="flex items-center gap-3">
                 <div class="p-2 rounded-lg" style="background-color: rgba(16,185,129,0.12);">
@@ -328,8 +416,8 @@
     </div>
 
     <!-- Top Cities – Collection Rate (%) -->
-    <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+    <div class="coll-datatable-card rounded-2xl p-6 overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-full opacity-90" style="background: linear-gradient(180deg, #6366f1, #4f46e5);"></div>
         <div class="flex items-center justify-between mb-5">
             <div class="flex items-center gap-3">
                 <div class="p-2 rounded-lg" style="background-color: rgba(99,102,241,0.12);">
@@ -339,7 +427,7 @@
                 </div>
                 <div>
                     <h3 class="text-lg font-bold mb-1.5 tracking-tight" style="color: #00072D;">Top Cities – Collection Rate (%)</h3>
-                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Color coded by performance bracket</p>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Cities with ≥{{ top_city_min_loans|default:10 }} loans; color coded by performance bracket</p>
                 </div>
             </div>
         </div>
@@ -349,8 +437,8 @@
     </div>
 
     <!-- Pending Cases by Amount Bucket -->
-    <div class="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative">
-        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: #00072D;"></div>
+    <div class="coll-datatable-card rounded-2xl p-6 overflow-hidden relative">
+        <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-full opacity-90" style="background: linear-gradient(180deg, #f97316, #ea580c);"></div>
         <div class="flex items-center justify-between mb-5">
             <div class="flex items-center gap-3">
                 <div class="p-2 rounded-lg" style="background-color: rgba(249,115,22,0.12);">
@@ -370,29 +458,27 @@
     </div>
 
     <!-- Collection Summary Data -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-                Collection Summary Data
-            </h2>
-            <p class="text-xs text-gray-500 dark:text-slate-400">
+    <div class="coll-datatable-card rounded-2xl overflow-hidden p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Collection Summary Data</h2>
+            <p class="text-xs text-gray-500 dark:text-slate-400 font-medium">
                 Showing first {{ collection_data_preview_limit }} of {{ collection_data_total|default:"0"|intcomma }} rows
             </p>
         </div>
 
         {% if collection_data_preview %}
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-                    <thead class="bg-gray-50 dark:bg-slate-900">
+            <div class="overflow-x-auto coll-table-wrap rounded-lg border border-slate-200/70 dark:border-slate-600/50">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead>
                         <tr>
                             {% for key in collection_data_preview.0.keys %}
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ key|title }}</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">{{ key|title }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
-                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         {% for item in collection_data_preview %}
-                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <tr class="transition-colors">
                                 {% for key, value in item.items %}
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">
                                         {{ value|default:"-" }}
@@ -422,26 +508,43 @@
         return `${dt.getDate()} ${monthNames[dt.getMonth()]}`;
     });
     const isDark = document.documentElement.classList.contains('dark');
+    const chartFont = "'Inter', ui-sans-serif, system-ui, sans-serif";
 
-    // eslint-disable-next-line no-undef
-    new Chart(canvas.getContext('2d'), {
+    const chartConfig = {
         type: 'line',
         data: {
             labels,
             datasets: [
-                { label: 'Repayment Amount', data: data.repayment_amounts || [], borderColor: 'rgb(249,115,22)', backgroundColor: 'rgba(249,115,22,0.08)', borderWidth: 2, tension: 0.35, yAxisID: 'y' },
-                { label: 'Net Disbursal', data: data.net_disbursal_amounts || [], borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.08)', borderWidth: 2, tension: 0.35, yAxisID: 'y' },
-                { label: 'Count', data: data.counts || [], borderColor: 'rgb(168,85,247)', backgroundColor: 'rgba(168,85,247,0.08)', borderWidth: 2, tension: 0.35, yAxisID: 'y1' },
+                { label: 'Repayment Amount', data: data.repayment_amounts || [], borderColor: '#ea580c', backgroundColor: 'rgba(249,115,22,0.12)', borderWidth: 2.5, tension: 0.35, fill: true, pointRadius: 0, pointHoverRadius: 6, pointHoverBackgroundColor: '#fff', pointHoverBorderColor: '#ea580c', pointHoverBorderWidth: 2, yAxisID: 'y' },
+                { label: 'Net Disbursal', data: data.net_disbursal_amounts || [], borderColor: '#2563eb', backgroundColor: 'rgba(59,130,246,0.12)', borderWidth: 2.5, tension: 0.35, fill: true, pointRadius: 0, pointHoverRadius: 6, pointHoverBackgroundColor: '#fff', pointHoverBorderColor: '#2563eb', pointHoverBorderWidth: 2, yAxisID: 'y' },
+                { label: 'Count', data: data.counts || [], borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.12)', borderWidth: 2.5, tension: 0.35, fill: true, pointRadius: 0, pointHoverRadius: 6, pointHoverBackgroundColor: '#fff', pointHoverBorderColor: '#7c3aed', pointHoverBorderWidth: 2, yAxisID: 'y1' },
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: { duration: 0 },
+            animation: { duration: 600 },
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { labels: { color: isDark ? 'rgb(226,232,240)' : 'rgb(55,65,81)', usePointStyle: true } },
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        color: isDark ? 'rgb(226,232,240)' : 'rgb(51,65,85)',
+                        usePointStyle: true,
+                        font: { family: chartFont, size: 12, weight: '600' },
+                        padding: 16,
+                    }
+                },
                 tooltip: {
+                    backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.98)',
+                    titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                    bodyColor: isDark ? '#cbd5e1' : '#475569',
+                    borderColor: isDark ? 'rgba(71,85,105,0.6)' : 'rgba(226,232,240,0.9)',
+                    borderWidth: 1,
+                    padding: 14,
+                    titleFont: { family: chartFont, size: 13, weight: '700' },
+                    bodyFont: { family: chartFont, size: 12 },
                     callbacks: {
                         label: function(ctx) {
                             const label = ctx.dataset.label || '';
@@ -452,12 +555,8 @@
                         afterBody: function(tooltipItems) {
                             if (!tooltipItems || tooltipItems.length === 0) return '';
                             const idx = tooltipItems[0].dataIndex;
-                            const collected = (data.collected_amounts && typeof data.collected_amounts[idx] !== 'undefined')
-                                ? data.collected_amounts[idx]
-                                : 0;
-                            const principal = (data.principal_amounts && typeof data.principal_amounts[idx] !== 'undefined')
-                                ? data.principal_amounts[idx]
-                                : 0;
+                            const collected = (data.collected_amounts && typeof data.collected_amounts[idx] !== 'undefined') ? data.collected_amounts[idx] : 0;
+                            const principal = (data.principal_amounts && typeof data.principal_amounts[idx] !== 'undefined') ? data.principal_amounts[idx] : 0;
                             return [
                                 `Collected Amount: ₹${Math.round(collected).toLocaleString('en-IN')}`,
                                 `Principal Amount: ₹${Math.round(principal).toLocaleString('en-IN')}`,
@@ -468,24 +567,40 @@
             },
             scales: {
                 x: {
-                    ticks: { color: isDark ? 'rgb(148,163,184)' : 'rgb(107,114,128)', maxTicksLimit: labels.length > 50 ? 20 : 30 },
-                    grid: { color: isDark ? 'rgba(51,65,85,0.25)' : 'rgba(229,231,235,0.6)' }
+                    ticks: {
+                        color: isDark ? 'rgb(148,163,184)' : 'rgb(100,116,139)',
+                        maxTicksLimit: labels.length > 50 ? 20 : 30,
+                        font: { family: chartFont, size: 11 },
+                    },
+                    grid: { color: isDark ? 'rgba(51,65,85,0.2)' : 'rgba(226,232,240,0.7)' },
+                    border: { display: false }
                 },
                 y: {
                     position: 'left',
                     beginAtZero: true,
-                    ticks: { color: isDark ? 'rgb(148,163,184)' : 'rgb(107,114,128)' },
-                    grid: { color: isDark ? 'rgba(51,65,85,0.25)' : 'rgba(229,231,235,0.6)' }
+                    ticks: {
+                        color: isDark ? 'rgb(148,163,184)' : 'rgb(100,116,139)',
+                        font: { family: chartFont, size: 11 },
+                        callback: function(v) { return '₹' + (v / 1e6).toFixed(1) + 'M'; }
+                    },
+                    grid: { color: isDark ? 'rgba(51,65,85,0.2)' : 'rgba(226,232,240,0.7)' },
+                    border: { display: false }
                 },
                 y1: {
                     position: 'right',
                     beginAtZero: true,
-                    ticks: { color: isDark ? 'rgb(148,163,184)' : 'rgb(107,114,128)' },
-                    grid: { drawOnChartArea: false }
+                    ticks: {
+                        color: 'rgb(124,58,237)',
+                        font: { family: chartFont, size: 11, weight: '600' },
+                    },
+                    grid: { drawOnChartArea: false },
+                    border: { display: false }
                 }
             }
         }
-    });
+    };
+
+    new Chart(canvas.getContext('2d'), chartConfig);
 })();
 </script>
 
@@ -586,6 +701,7 @@
     const colors = JSON.parse('{{ top_city_rate_colors|default:"[]"|escapejs }}');
     const collected = JSON.parse('{{ top_city_rate_collected|default:"[]"|escapejs }}');
     const pending = JSON.parse('{{ top_city_rate_pending|default:"[]"|escapejs }}');
+    const loanCounts = JSON.parse('{{ top_city_rate_loan_count|default:"[]"|escapejs }}');
     if (!labels || labels.length === 0) return;
 
     const isDark = document.documentElement.classList.contains('dark');
@@ -645,11 +761,14 @@
                             const pct = values[i];
                             const col = collected[i] || 0;
                             const pen = pending[i] || 0;
-                            return [
+                            const loans = loanCounts && loanCounts[i] != null ? loanCounts[i] : '';
+                            const lines = [
                                 `Collection Rate: ${Number(pct).toFixed(2)}%`,
                                 `Collected: ₹${Math.round(col).toLocaleString('en-IN')}`,
                                 `Pending: ₹${Math.round(pen).toLocaleString('en-IN')}`,
                             ];
+                            if (loans !== '') lines.push(`Loans: ${loans}`);
+                            return lines;
                         }
                     }
                 }
